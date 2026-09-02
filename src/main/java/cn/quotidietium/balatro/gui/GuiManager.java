@@ -4,6 +4,7 @@ import cn.quotidietium.balatro.BalatroPlugin;
 import cn.quotidietium.balatro.command.BalatroCommand;
 import cn.quotidietium.balatro.engine.Data;
 import cn.quotidietium.balatro.engine.Rng;
+import cn.quotidietium.balatro.i18n.Lang;
 import cn.quotidietium.balatro.session.GameSession;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import java.util.HashMap;
@@ -138,8 +139,7 @@ public final class GuiManager implements Listener {
             try {
                 openMenu(player, type);
             } catch (RuntimeException ex) {
-                plugin.getLogger().warning("GUI 打开菜单异常（玩家 " + player.getName()
-                        + "，菜单 " + type + "）：" + ex);
+                plugin.getLogger().warning(Lang.t("log.gui_open_failed", player.getName(), type, ex));
             }
         });
     }
@@ -162,23 +162,23 @@ public final class GuiManager implements Listener {
 
     private Inventory buildMain(GuiHolder holder) {
         Inventory inv = Bukkit.createInventory(holder, GuiLayout.SIZE_MAIN,
-                Component.text("小丑牌 · 开局向导", NamedTextColor.GOLD));
+                Component.text(Lang.t("gui.main.title"), NamedTextColor.GOLD));
         fillBorder(inv, GuiLayout.SIZE_MAIN);
-        inv.setItem(MAIN_INFO_SLOT, GuiItems.item(Material.BOOK, "选择开局模式", NamedTextColor.GOLD,
-                "标准局：15 牌组 × 8 赌注，通关 8 底注",
-                "挑战局：在标准局上叠加 20 种挑战规则",
-                "后续可继续选择 牌组 / 赌注 / 种子"));
-        inv.setItem(MAIN_NORMAL_SLOT, GuiItems.item(Material.LIME_DYE, "标准局", NamedTextColor.GREEN,
-                "经典玩法：通关 8 个底注", "点击进入牌组选择"));
-        inv.setItem(MAIN_CHALLENGE_SLOT, GuiItems.item(Material.NETHER_STAR, "挑战局", NamedTextColor.LIGHT_PURPLE,
-                "叠加一条挑战规则（共 20 种）", "点击进入牌组选择"));
-        inv.setItem(MAIN_CLOSE_SLOT, GuiItems.item(Material.BARRIER, "关闭", NamedTextColor.RED));
+        inv.setItem(MAIN_INFO_SLOT, GuiItems.item(Material.BOOK, Lang.t("gui.main.info"), NamedTextColor.GOLD,
+                Lang.t("gui.main.info.l1"),
+                Lang.t("gui.main.info.l2"),
+                Lang.t("gui.main.info.l3")));
+        inv.setItem(MAIN_NORMAL_SLOT, GuiItems.item(Material.LIME_DYE, Lang.t("gui.main.normal"), NamedTextColor.GREEN,
+                Lang.t("gui.main.normal.l1"), Lang.t("gui.main.normal.l2")));
+        inv.setItem(MAIN_CHALLENGE_SLOT, GuiItems.item(Material.NETHER_STAR, Lang.t("gui.main.challenge"), NamedTextColor.LIGHT_PURPLE,
+                Lang.t("gui.main.challenge.l1"), Lang.t("gui.main.normal.l2")));
+        inv.setItem(MAIN_CLOSE_SLOT, GuiItems.item(Material.BARRIER, Lang.t("gui.close"), NamedTextColor.RED));
         return inv;
     }
 
     private Inventory buildDeck(GuiHolder holder, GuiState st) {
         Inventory inv = Bukkit.createInventory(holder, GuiLayout.SIZE_LIST,
-                Component.text("选择牌组", NamedTextColor.GOLD));
+                Component.text(Lang.t("gui.deck.title"), NamedTextColor.GOLD));
         fillBorder(inv, GuiLayout.SIZE_LIST);
         List<Data.Deck> decks = Data.DECKS;
         for (int i = 0; i < decks.size(); i++) {
@@ -190,42 +190,42 @@ public final class GuiManager implements Listener {
             }
             inv.setItem(GuiLayout.slotForIndex(GuiLayout.SIZE_LIST, i), it);
         }
-        inv.setItem(LIST_INFO_SLOT, infoItem("当前牌组", st.deck().name() + " — " + st.deck().desc()));
+        inv.setItem(LIST_INFO_SLOT, infoItem(Lang.t("gui.deck.current"), st.deck().name() + " — " + st.deck().desc()));
         inv.setItem(GuiLayout.backSlot(GuiLayout.SIZE_LIST),
-                GuiItems.item(Material.ARROW, "返回：模式选择", NamedTextColor.YELLOW));
+                GuiItems.item(Material.ARROW, Lang.t("gui.back.mode"), NamedTextColor.YELLOW));
         inv.setItem(GuiLayout.nextSlot(GuiLayout.SIZE_LIST),
-                GuiItems.item(Material.LIME_DYE, "下一步：赌注选择", NamedTextColor.GREEN));
+                GuiItems.item(Material.LIME_DYE, Lang.t("gui.next.stake"), NamedTextColor.GREEN));
         return inv;
     }
 
     private Inventory buildStake(GuiHolder holder, GuiState st) {
         Inventory inv = Bukkit.createInventory(holder, GuiLayout.SIZE_MAIN,
-                Component.text("选择赌注", NamedTextColor.GOLD));
+                Component.text(Lang.t("gui.stake.title"), NamedTextColor.GOLD));
         fillBorder(inv, GuiLayout.SIZE_MAIN);
         List<Data.Stake> stakes = Data.STAKES;
         for (int i = 0; i < stakes.size(); i++) {
             Data.Stake s = stakes.get(i);
             ItemStack it = GuiItems.item(GuiItems.stakeMaterial(i),
-                    i + " " + s.name(), NamedTextColor.YELLOW, s.desc(), "赌注效果向上累加（含更低赌注）");
+                    i + " " + s.name(), NamedTextColor.YELLOW, s.desc(), Lang.t("gui.stake.note"));
             if (i == st.stakeIdx()) {
                 it = GuiItems.glint(it);
             }
             inv.setItem(GuiLayout.slotForIndex(GuiLayout.SIZE_MAIN, i), it);
         }
-        inv.setItem(LIST_INFO_SLOT, infoItem("当前赌注",
+        inv.setItem(LIST_INFO_SLOT, infoItem(Lang.t("gui.stake.current"),
                 st.stakeIdx() + " " + st.stake().name() + " — " + st.stake().desc()));
         inv.setItem(GuiLayout.backSlot(GuiLayout.SIZE_MAIN),
-                GuiItems.item(Material.ARROW, "返回：牌组选择", NamedTextColor.YELLOW));
+                GuiItems.item(Material.ARROW, Lang.t("gui.back.deck"), NamedTextColor.YELLOW));
         inv.setItem(GuiLayout.nextSlot(GuiLayout.SIZE_MAIN),
                 GuiItems.item(Material.LIME_DYE,
-                        st.mode() == GuiState.Mode.CHALLENGE ? "下一步：挑战选择" : "下一步：确认开局",
+                        Lang.t(st.mode() == GuiState.Mode.CHALLENGE ? "gui.next.challenge" : "gui.next.confirm"),
                         NamedTextColor.GREEN));
         return inv;
     }
 
     private Inventory buildChallenge(GuiHolder holder, GuiState st) {
         Inventory inv = Bukkit.createInventory(holder, GuiLayout.SIZE_LIST,
-                Component.text("选择挑战", NamedTextColor.GOLD));
+                Component.text(Lang.t("gui.challenge.title"), NamedTextColor.GOLD));
         fillBorder(inv, GuiLayout.SIZE_LIST);
         List<Data.Challenge> challenges = Data.CHALLENGES;
         for (int i = 0; i < challenges.size(); i++) {
@@ -237,45 +237,48 @@ public final class GuiManager implements Listener {
             }
             inv.setItem(GuiLayout.slotForIndex(GuiLayout.SIZE_LIST, i), it);
         }
-        inv.setItem(LIST_INFO_SLOT, infoItem("当前挑战", st.challenge().name() + " — " + st.challenge().desc()));
+        inv.setItem(LIST_INFO_SLOT, infoItem(Lang.t("gui.challenge.current"), st.challenge().name() + " — " + st.challenge().desc()));
         inv.setItem(GuiLayout.backSlot(GuiLayout.SIZE_LIST),
-                GuiItems.item(Material.ARROW, "返回：赌注选择", NamedTextColor.YELLOW));
+                GuiItems.item(Material.ARROW, Lang.t("gui.back.stake"), NamedTextColor.YELLOW));
         inv.setItem(GuiLayout.nextSlot(GuiLayout.SIZE_LIST),
-                GuiItems.item(Material.LIME_DYE, "下一步：确认开局", NamedTextColor.GREEN));
+                GuiItems.item(Material.LIME_DYE, Lang.t("gui.next.confirm"), NamedTextColor.GREEN));
         return inv;
     }
 
     private Inventory buildConfirm(GuiHolder holder, GuiState st) {
         boolean challengeMode = st.mode() == GuiState.Mode.CHALLENGE;
         Inventory inv = Bukkit.createInventory(holder, GuiLayout.SIZE_LIST,
-                Component.text("确认开局", NamedTextColor.GOLD));
+                Component.text(Lang.t("gui.confirm.title"), NamedTextColor.GOLD));
         fillBorder(inv, GuiLayout.SIZE_LIST);
 
         inv.setItem(CONFIRM_DECK_SLOT, GuiItems.item(GuiItems.deckMaterial(st.deck().key()),
-                "牌组：" + st.deck().name(), NamedTextColor.YELLOW, st.deck().desc(), "点击重新选择"));
+                Lang.t("gui.confirm.deck", st.deck().name()), NamedTextColor.YELLOW, st.deck().desc(),
+                Lang.t("gui.confirm.reselect")));
         inv.setItem(CONFIRM_STAKE_SLOT, GuiItems.item(GuiItems.stakeMaterial(st.stakeIdx()),
-                "赌注：" + st.stakeIdx() + " " + st.stake().name(), NamedTextColor.YELLOW,
-                st.stake().desc(), "点击重新选择"));
+                Lang.t("gui.confirm.stake", st.stakeIdx(), st.stake().name()), NamedTextColor.YELLOW,
+                st.stake().desc(), Lang.t("gui.confirm.reselect")));
         if (challengeMode) {
             inv.setItem(CONFIRM_MODE_SLOT, GuiItems.item(GuiItems.challengeMaterial(st.challenge().key()),
-                    "挑战：" + st.challenge().name(), NamedTextColor.LIGHT_PURPLE,
-                    st.challenge().desc(), "点击重新选择"));
+                    Lang.t("gui.confirm.challenge", st.challenge().name()), NamedTextColor.LIGHT_PURPLE,
+                    st.challenge().desc(), Lang.t("gui.confirm.reselect")));
         } else {
             inv.setItem(CONFIRM_MODE_SLOT, GuiItems.item(Material.LIME_DYE,
-                    "模式：标准局", NamedTextColor.GREEN, "通关 8 个底注", "点击返回模式选择"));
+                    Lang.t("gui.confirm.mode_standard"), NamedTextColor.GREEN,
+                    Lang.t("gui.confirm.mode_standard.l1"), Lang.t("gui.confirm.mode_standard.l2")));
         }
         inv.setItem(CONFIRM_SEED_SLOT, GuiItems.item(Material.NAME_TAG,
-                "种子：" + (st.seed() == null ? "随机" : st.seed()), NamedTextColor.AQUA,
-                "左键：在聊天框输入种子（60 秒内）",
-                "右键：恢复随机种子",
-                "同一种子可复现同一局（抽牌/商店/小丑完全一致）"));
+                Lang.t("gui.confirm.seed", st.seed() == null ? Lang.t("gui.confirm.seed_random") : st.seed()),
+                NamedTextColor.AQUA,
+                Lang.t("gui.confirm.seed.l1"),
+                Lang.t("gui.confirm.seed.l2"),
+                Lang.t("gui.confirm.seed.l3")));
 
         inv.setItem(GuiLayout.backSlot(GuiLayout.SIZE_LIST),
                 GuiItems.item(Material.ARROW,
-                        challengeMode ? "返回：挑战选择" : "返回：赌注选择", NamedTextColor.YELLOW));
-        inv.setItem(CONFIRM_START_SLOT, GuiItems.item(Material.EMERALD, "▶ 开始游戏", NamedTextColor.GREEN,
-                "以当前选择开始一局"));
-        inv.setItem(CONFIRM_CANCEL_SLOT, GuiItems.item(Material.BARRIER, "取消", NamedTextColor.RED));
+                        Lang.t(challengeMode ? "gui.back.challenge" : "gui.back.stake"), NamedTextColor.YELLOW));
+        inv.setItem(CONFIRM_START_SLOT, GuiItems.item(Material.EMERALD, Lang.t("gui.confirm.start"), NamedTextColor.GREEN,
+                Lang.t("gui.confirm.start.l1")));
+        inv.setItem(CONFIRM_CANCEL_SLOT, GuiItems.item(Material.BARRIER, Lang.t("gui.cancel"), NamedTextColor.RED));
         return inv;
     }
 
@@ -320,9 +323,8 @@ public final class GuiManager implements Listener {
             dispatchClick(player, holder.type(), slot, e.getClick());
         } catch (RuntimeException ex) {
             // 兜底：菜单异常不应逃逸到事件分发器；关界面防止玩家卡在半状态菜单
-            plugin.getLogger().warning("GUI 点击处理异常（玩家 " + player.getName()
-                    + "，菜单 " + holder.type() + "，槽位 " + slot + "）：" + ex);
-            player.sendMessage("§c处理点击时出错，请重新打开 /balatro gui。");
+            plugin.getLogger().warning(Lang.t("log.gui_click_failed", player.getName(), holder.type(), slot, ex));
+            player.sendMessage(Lang.t("gui.err.click"));
             closeInventoryLater(player);
         }
     }
@@ -478,7 +480,7 @@ public final class GuiManager implements Listener {
             if (click.isRightClick()) {
                 st.clearSeed();
                 clickSound(player);
-                player.sendMessage("§7已恢复随机种子。");
+                player.sendMessage(Lang.t("gui.seed.random_restored"));
                 openMenuLater(player, MenuType.CONFIRM);
             } else {
                 promptSeed(player);
@@ -513,8 +515,8 @@ public final class GuiManager implements Listener {
         pendingSeeds.put(player.getUniqueId(), System.currentTimeMillis() + SEED_INPUT_TIMEOUT_MS);
         closeInventoryLater(player);
         clickSound(player);
-        player.sendMessage("§e请在聊天框输入本局种子（60 秒内有效）；输入 §fcancel§e 取消。");
-        player.sendMessage("§7仅允许字母/数字/下划线/连字符，长度 1~32。当前输入会被吞掉不会广播。");
+        player.sendMessage(Lang.t("gui.seed.prompt"));
+        player.sendMessage(Lang.t("gui.seed.rules"));
     }
 
     @EventHandler
@@ -529,7 +531,7 @@ public final class GuiManager implements Listener {
         if (System.currentTimeMillis() > expiry) {
             // 已超时：按普通聊天放行，但告知玩家种子输入已过期（避免困惑为何上条消息没反应）
             Player p = e.getPlayer();
-            p.sendMessage("§7种子输入已超时（60 秒），本次聊天正常发送。");
+            p.sendMessage(Lang.t("gui.seed.timeout"));
             return;
         }
         String msg = PlainTextComponentSerializer.plainText().serialize(e.message()).trim();
@@ -551,20 +553,20 @@ public final class GuiManager implements Listener {
         if (st == null) {
             return;
         }
-        if (msg.equalsIgnoreCase("cancel") || msg.equals("取消")) {
-            player.sendMessage("§7已取消种子输入。");
+        if (msg.equalsIgnoreCase("cancel") || msg.equals(Lang.t("gui.seed.cancel_word"))) {
+            player.sendMessage(Lang.t("gui.seed.cancelled"));
         } else if (!Rng.isValidSeed(msg)) {
-            player.sendMessage("§c无效种子：仅允许字母/数字/下划线/连字符，长度 1~32。仍使用原设置。");
+            player.sendMessage(Lang.t("gui.seed.invalid"));
         } else {
             st.setSeed(msg);
-            player.sendMessage("§a种子已设置为 §f" + msg + "§a。");
+            player.sendMessage(Lang.t("gui.seed.set", msg));
         }
         // 若等待期间已通过命令开了局，则不再弹出确认页
         if (!plugin.sessionManager().isActive(player)) {
             try {
                 openMenu(player, MenuType.CONFIRM);
             } catch (RuntimeException ex) {
-                plugin.getLogger().warning("GUI 种子确认页重开异常（玩家 " + player.getName() + "）：" + ex);
+                plugin.getLogger().warning(Lang.t("log.gui_reopen_failed", player.getName(), ex));
             }
         }
     }
@@ -576,19 +578,19 @@ public final class GuiManager implements Listener {
         player.closeInventory();
         if (plugin.sessionManager().isActive(player)) {
             // 双保险：命令层也挡，但 GUI 打开期间玩家可能用命令开了局
-            player.sendMessage("§c你已在一局中，先用 /balatro quit。");
+            player.sendMessage(Lang.t("gui.err.already_running"));
             return;
         }
         GameSession s;
         try {
             s = plugin.sessionManager().start(player, req.deckKey(), req.stakeIdx(), req.seed(), req.challengeKey());
         } catch (RuntimeException ex) {
-            plugin.getLogger().warning("GUI 开局异常（玩家 " + player.getName() + "）：" + ex);
-            player.sendMessage("§c开局失败，请重试或联系管理员。");
+            plugin.getLogger().warning(Lang.t("log.gui_start_failed", player.getName(), ex));
+            player.sendMessage(Lang.t("gui.err.start_failed"));
             return;
         }
         if (s == null) {
-            player.sendMessage("§c开局失败（可能 RunStart 被其他插件取消）。");
+            player.sendMessage(Lang.t("gui.err.start_cancelled"));
             return;
         }
         states.remove(player.getUniqueId()); // 开局成功后清空向导状态

@@ -7,6 +7,7 @@ import cn.quotidietium.balatro.engine.JokerInstance;
 import cn.quotidietium.balatro.engine.Phase;
 import cn.quotidietium.balatro.engine.Rng;
 import cn.quotidietium.balatro.engine.RunState;
+import cn.quotidietium.balatro.i18n.Lang;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,7 +63,7 @@ public final class Packs {
         switch (type) {
             case ARCANA -> {
                 Data.Tarot t = st.pick(Data.TAROTS);
-                c.kind = "tarot"; c.key = t.key; c.name = t.name; c.desc = t.desc;
+                c.kind = "tarot"; c.key = t.key; c.name = t.displayName(); c.desc = t.desc();
             }
             case CELESTIAL -> {
                 Data.Planet p = null;
@@ -72,7 +73,7 @@ public final class Packs {
                     for (Data.Planet x : Data.Planet.values()) if (x.hand == most) { p = x; break; }
                 }
                 if (p == null) p = st.pick(Data.PLANETS);
-                c.kind = "planet"; c.key = p.key; c.name = p.name; c.desc = p.desc;
+                c.kind = "planet"; c.key = p.key; c.name = p.displayName(); c.desc = p.desc();
             }
             case STANDARD -> {
                 Card card = s.randomPlayingCard();
@@ -88,7 +89,7 @@ public final class Packs {
                 if (st.chance(0.2)) {
                     card.setSeal(Data.SEALS.get(st.range(0, Data.SEALS.size() - 1)));
                 }
-                c.kind = "playing"; c.card = card; c.name = s.cardName(card); c.desc = "游戏牌";
+                c.kind = "playing"; c.card = card; c.name = s.cardName(card); c.desc = Lang.t("item.playing_card");
             }
             case BUFFOON -> {
                 Shop.CardItem item = Shop.makeJokerItem(s, null, null);
@@ -115,7 +116,7 @@ public final class Packs {
                     }
                     sp = st.pick(pool);
                 }
-                c.kind = "spectral"; c.key = sp.key; c.name = sp.name; c.desc = sp.desc;
+                c.kind = "spectral"; c.key = sp.key; c.name = sp.displayName(); c.desc = sp.desc();
             }
         }
         return c;
@@ -134,15 +135,15 @@ public final class Packs {
                 boolean neg = item.joker.edition == cn.quotidietium.balatro.engine.Data.Edition.NEGATIVE;
                 if (neg ? s.jokerSpace() < 0 : s.jokerSpace() <= 0) return false;
                 s.jokers.add(item.joker);
-                s.msg("获得小丑：" + item.name);
+                s.msg(Lang.t("msg.joker_gained", item.name));
             }
             case "playing" -> {
                 s.addCardToDeck(item.card);
-                s.msg("牌组加入：" + item.name);
+                s.msg(Lang.t("msg.deck_added", item.name));
             }
             default -> {
                 if (!s.addConsumableKey(item.kind, item.key)) return false;
-                s.msg("获得：" + item.name);
+                s.msg(Lang.t("msg.gained", item.name));
             }
         }
         item.taken = true;
@@ -171,7 +172,7 @@ public final class Packs {
         } finally {
             s.releaseJokerBuffer();
         }
-        s.msg("跳过了补充包");
+        s.msg(Lang.t("msg.pack_skipped"));
         return true;
     }
 

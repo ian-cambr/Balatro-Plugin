@@ -1,5 +1,6 @@
 package cn.quotidietium.balatro.command;
 
+import cn.quotidietium.balatro.i18n.Lang;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,96 +13,120 @@ import java.util.List;
 final class BalatroHelp {
 
     /** 一页帮助：标题（显示在页眉）+ 正文行。 */
-    private record Page(String title, String[] body) {
+    private record Page(String titleKey, String[] bodyKeys) {
+
+        String title() {
+            return tr(titleKey);
+        }
+
+        String[] body() {
+            return trAll(bodyKeys);
+        }
     }
 
     private static final List<Page> PAGES = new ArrayList<>();
 
     static {
-        add("开始与目标", new String[]{
-                "目标：凑扑克牌型得分达到盲注目标，击败 8 个底注(ante)即通关。",
-                "计分 = 筹码 × 倍率；小丑牌与增强牌会大幅加成。",
-                "开局：§e/balatro gui§f（图形界面，推荐）或 §e/balatro play [牌组] [赌注] [挑战] [种子]",
-                "play 参数顺序不限：牌组名/赌注数字/挑战名自动识别，其余视作种子。",
-                "翻页：§e/balatro help <页码>§f；查命令：§e/balatro help <命令名>§f（如 help play）。"
+        add("help.page.start.title", new String[]{
+                "help.page.start.1",
+                "help.page.start.2",
+                "help.page.start.3",
+                "help.page.start.4",
+                "help.page.start.5"
         });
-        add("牌组（共 15，play 传牌组名）", new String[]{
-                "§ered红§f(+弃牌) §eblue蓝§f(+出牌) §eyellow黄§f(开局+$10) §egreen绿§f(+钱/无利息)",
-                "§eblack黑§f(+槽/-出牌) §emagic魔法§f(水晶球+2愚人) §enebula星云§f(望远镜/-消耗品槽)",
-                "§eghost幽灵§f(幻灵+妖术) §ezodiac黄道§f(开局3张券) §eabandoned废弃§f(无人头牌)",
-                "§echeckered棋盘§f(仅黑桃红桃) §epainted涂鸦§f(+手牌/-槽) §eplasma等离子§f(筹码倍率取平均)",
-                "§eerratic百变§f(随机点数花色) §eanaglyph浮雕§f(击败Boss得翻倍标签)"
+        add("help.page.deck.title", new String[]{
+                "help.page.deck.1",
+                "help.page.deck.2",
+                "help.page.deck.3",
+                "help.page.deck.4",
+                "help.page.deck.5"
         });
-        add("赌注（0~7，play 传数字，效果累加）", new String[]{
-                "§e0 白注§f（基础）   §e1 红注§f（小盲无奖励金）",
-                "§e2 绿注§f（目标分随底注加速 ×1.15） §e3 黑注§f（商店可能出现永恒小丑）",
-                "§e4 蓝注§f（每回合弃牌 -1） §e5 紫注§f（目标分再加速 ×1.3）",
-                "§e6 橙注§f（商店可能出现易腐小丑） §e7 金注§f（可能出现租赁小丑）",
-                "赌注越高越难；从 §e0§f 开始体验，逐步挑战更高赌注。"
+        add("help.page.stake.title", new String[]{
+                "help.page.stake.1",
+                "help.page.stake.2",
+                "help.page.stake.3",
+                "help.page.stake.4",
+                "help.page.stake.5"
         });
-        add("挑战模式（play 传挑战名，共 20 · 上）", new String[]{
-                "§eomelette§f煎蛋卷(5蛋/三金封禁/经济券丑禁入) §ecity15§f十五分钟城市(人头牌翻倍)",
-                "§erich§f富者愈富(筹码≤金钱/$100) §eknife§f刀尖行走(永恒仪式匕首)",
-                "§exray§fX光视界(1/4抽牌面朝下) §emadworld§f疯狂世界(2~9牌组/植物禁现)",
-                "§eluxury§f奢侈品税(每$5手牌-1) §enonperish§f永不过期(全永恒/衰减类禁)",
-                "§emedusa§f美杜莎(人头变石头/永恒大理石) §edouble§f孤注一掷(计分后失效/红蜡封)"
+        add("help.page.challenge1.title", new String[]{
+                "help.page.challenge1.1",
+                "help.page.challenge1.2",
+                "help.page.challenge1.3",
+                "help.page.challenge1.4",
+                "help.page.challenge1.5"
         });
-        add("挑战模式（共 20 · 下）", new String[]{
-                "§etypecast§f刻板印象(底注4全永恒槽0) §einflation§f通货膨胀(每购+价)",
-                "§ebram§f布拉姆扑克(永恒吸血鬼) §efragile§f易碎品(全玻璃/双6！)",
-                "§emonolith§f巨石阵(永恒方尖碑+负片大理石) §eblastoff§f点火升空(2出2弃4槽/永恒星座火箭)",
-                "§efivecard§f五张抽牌(手牌上限5/7小丑槽) §egolden§f金针(1出6弃/弃牌$1)",
-                "§ecruelty§f残酷(小大盲无奖励金/仅3槽) §ejokerless§f无丑之地(无法获得小丑)"
+        add("help.page.challenge2.title", new String[]{
+                "help.page.challenge2.1",
+                "help.page.challenge2.2",
+                "help.page.challenge2.3",
+                "help.page.challenge2.4",
+                "help.page.challenge2.5"
         });
-        add("出牌回合命令", new String[]{
-                "§e/balatro status§f   查看当前局面与手牌",
-                "§e/balatro playcard <序号...>§f   出牌（1~5 张，序号从 1 起）",
-                "§e/balatro disc <序号...>§f   弃牌",
-                "§e/balatro endless§f   通关后进入无尽模式（ante 9+）",
-                "§e/balatro quit§f   放弃本局（退出即弃，不存档）"
+        add("help.page.round.title", new String[]{
+                "help.page.round.1",
+                "help.page.round.2",
+                "help.page.round.3",
+                "help.page.round.4",
+                "help.page.round.5"
         });
-        add("商店命令（击败盲注后进入）", new String[]{
-                "§e/balatro shop§f   查看商店商品/补充包/优惠券",
-                "§e/balatro buy <序号>§f 购买卡牌  §7|§e buybag <序号>§f 购买补充包",
-                "§e/balatro buyvoucher§f   购买优惠券",
-                "§e/balatro reroll§f   重掷商店商品",
-                "§e/balatro next§f 离开商店 → §ego§f/skip  §7出售持有牌见 §e/balatro help 8"
+        add("help.page.shop.title", new String[]{
+                "help.page.shop.1",
+                "help.page.shop.2",
+                "help.page.shop.3",
+                "help.page.shop.4",
+                "help.page.shop.5"
         });
-        add("商店出售持有牌", new String[]{
-                "商店阶段可在全息牌桌上看到并出售持有的小丑/消耗品（对齐原版）。",
-                "§e右键持有小丑§f → 确认出售（永恒不可售）；§e右键消耗品§f → 确认出售/使用。",
-                "商店右键消耗品的确认框附「确认使用」（限无目标类：星球/非目标塔罗/部分幻灵）。",
-                "§e/balatro sellj <序号>§f 出售小丑 §7|§e sellc <序号>§f 出售消耗品（半价，最少 $1）",
-                "回合阶段右键消耗品=使用（自动带选中目标），商店阶段右键=出售。"
+        add("help.page.shopsell.title", new String[]{
+                "help.page.shopsell.1",
+                "help.page.shopsell.2",
+                "help.page.shopsell.3",
+                "help.page.shopsell.4",
+                "help.page.shopsell.5"
         });
-        add("消耗品与补充包", new String[]{
-                "§e/balatro cons§f   查看持有的消耗品（塔罗/星球/幻灵）",
-                "§e/balatro use <序号> [手牌序号...]§f   使用消耗品（需目标时传手牌序号）",
-                "§e/balatro packs§f   查看正在开启的补充包",
-                "§e/balatro pick <序号>§f   从补充包选一张",
-                "§e/balatro skipack§f   跳过当前补充包"
+        add("help.page.cons.title", new String[]{
+                "help.page.cons.1",
+                "help.page.cons.2",
+                "help.page.cons.3",
+                "help.page.cons.4",
+                "help.page.cons.5"
         });
-        add("出售 · 排行榜 · 帮助", new String[]{
-                "§e/balatro sellj <序号>§f   出售小丑（永恒不可售）",
-                "§e/balatro sellc <序号>§f   出售消耗品",
-                "§e/balatro top§f   查看小丑牌排行榜（按玩家聚合：最高底注 · 通关次数）",
-                "§e/balatro help <页码>§f   查看指定页帮助",
-                "§e/balatro§f（无参数）显示简要帮助 §7|§e version§f 版本与版权信息"
+        add("help.page.misc.title", new String[]{
+                "help.page.misc.1",
+                "help.page.misc.2",
+                "help.page.misc.3",
+                "help.page.misc.4",
+                "help.page.misc.5"
         });
-        add("全息牌桌交互", new String[]{
-                "§e/balatro play§f 后眼前出现牌桌（仅自己可见）。",
-                "直接§e右键§f = 使用/操作（选牌·购买·选择·使用·出售·出牌/弃牌/重掷）。",
-                "§eShift + 右键§f = 查看该卡简介（发到聊天框）。",
-                "进入商店/补充包时会自动列出全部简介，便于判断。",
-                "手牌自动按点数从大到小排列；选中牌上移并高亮。"
+        add("help.page.board.title", new String[]{
+                "help.page.board.1",
+                "help.page.board.2",
+                "help.page.board.3",
+                Lang.t("board.help.auto"),
+                "help.page.board.5"
         });
-        add("计分要素", new String[]{
-                "§6增强§f(8)：奖励+筹 / 倍率+倍 / 万能 / 玻璃×2 / 钢铁(手中×1.5)",
-                "       石头+50筹 / 黄金(手中+$3) / 幸运(几率+倍或+$)",
-                "§d版本§f(4)：闪膜+50筹 / 镭射+10倍 / 多彩×1.5 / 负片(槽+1)",
-                "§b蜡封§f(4)：金(计分+$3) / 红(重触发) / 蓝(手中→星球) / 紫(弃牌→塔罗)",
-                "牌型可被§e星球牌§f升级；13 种牌型各有基础筹码 × 倍率。"
+        add("help.page.score.title", new String[]{
+                "help.page.score.1",
+                "help.page.score.2",
+                "help.page.score.3",
+                "help.page.score.4",
+                "help.page.score.5"
         });
+    }
+
+    /**
+     * 取文案：有对应词条就翻译，否则原样返回。
+     *
+     * <p>帮助表里混着少量纯 ASCII 的用法行（如 {@code §e/balatro gui}），它们不是词条，
+     * 直接透传。
+     */
+    private static String tr(String keyOrLiteral) {
+        return Lang.has(keyOrLiteral) ? Lang.t(keyOrLiteral) : keyOrLiteral;
+    }
+
+    private static String[] trAll(String[] keysOrLiterals) {
+        String[] out = new String[keysOrLiterals.length];
+        for (int i = 0; i < out.length; i++) out[i] = tr(keysOrLiterals[i]);
+        return out;
     }
 
     private static void add(String title, String[] body) {
@@ -120,7 +145,7 @@ final class BalatroHelp {
      */
     static boolean sendPage(org.bukkit.command.CommandSender sender, int page) {
         if (page < 1 || page > PAGES.size()) {
-            sender.sendMessage("§7帮助共 §e" + PAGES.size() + " §7页，用法：§e/balatro help <1~" + PAGES.size() + ">");
+            sender.sendMessage(Lang.t("help.usage.range", PAGES.size()));
             return false;
         }
         for (String line : linesFor(page)) {
@@ -138,140 +163,148 @@ final class BalatroHelp {
         if (page < 1 || page > PAGES.size()) return java.util.List.of();
         Page p = PAGES.get(page - 1);
         java.util.List<String> lines = new java.util.ArrayList<>();
-        lines.add("§6━━ 小丑牌 · 帮助 §e" + page + "/" + PAGES.size() + " §6· " + p.title + " ━━");
-        for (String line : p.body) lines.add("§f" + line);
+        lines.add(Lang.t("help.page.header", page, PAGES.size(), p.title()));
+        for (String line : p.body()) lines.add("§f" + line);
         return lines;
     }
 
     // ================= 单命令详情（/balatro help <命令名>） =================
 
     /** 一条命令的帮助：主键、别名、标题、正文行。包内可见：{@link HoverText} 复用为悬浮详情。 */
-    record CmdHelp(String key, String[] aliases, String title, String[] body) {
+    record CmdHelp(String key, String[] aliases, String titleKey, String[] bodyKeys) {
+
+        String title() {
+            return tr(titleKey);
+        }
+
+        String[] body() {
+            return trAll(bodyKeys);
+        }
     }
 
     private static final List<CmdHelp> COMMANDS = new ArrayList<>();
 
     static {
-        cmd("help", new String[]{"?"}, "帮助", new String[]{
-                "§e/balatro help [页码 | 命令名]",
-                "· 不带参数 / 数字 → 分页帮助（每页 ≤ 6 行）。",
-                "· 命令名（如 §eplay§f）→ 该命令的详细说明。",
-                "例：§e/balatro help§f · §e/balatro help 2§f · §e/balatro help play"
+        cmd("help", new String[]{"?"}, "help.cmd.help.title", new String[]{
+                "help.cmd.help.1",
+                "help.cmd.help.2",
+                "help.cmd.help.3",
+                "help.cmd.help.4"
         });
-        cmd("gui", new String[]{"menu"}, "图形界面开局向导", new String[]{
+        cmd("gui", new String[]{"menu"}, "help.cmd.gui.title", new String[]{
                 "§e/balatro gui",
-                "打开图形界面，点击物品依次选择：模式(标准/挑战) → 牌组(15) → 赌注(0~7) → (挑战) → 确认。",
-                "种子默认随机；确认页左键种子图标可在聊天框输入指定种子（60 秒内），右键恢复随机。",
-                "例：§e/balatro gui§f（等价别名 §e/balatro menu§f）"
+                "help.cmd.gui.2",
+                "help.cmd.gui.3",
+                "help.cmd.gui.4"
         });
-        cmd("play", new String[]{}, "开始一局", new String[]{
-                "§e/balatro play [牌组] [赌注] [挑战] [种子]",
-                "参数顺序不限，自动识别：牌组名(15)/赌注数字(0~7)/挑战名(20)，其余视作种子。",
-                "§7单数字 0~7 识别为赌注；种子含数字时需混入字母（如 seed3）或用 GUI 输入。",
-                "例：§e/balatro play blue 1§f · §e/balatro play red 0 omelette§f · §e/balatro play myseed",
-                "留空 = 随机种子 · 红牌组 · 白注。牌组/赌注/挑战详见 §e/balatro help 2~5"
+        cmd("play", new String[]{}, "help.cmd.play.title", new String[]{
+                "help.cmd.play.1",
+                "help.cmd.play.2",
+                "help.cmd.play.3",
+                "help.cmd.play.4",
+                "help.cmd.play.5"
         });
-        cmd("playcard", new String[]{"pc"}, "出牌", new String[]{
-                "§e/balatro playcard <手牌序号...>",
-                "选 1~5 张手牌出牌计分（序号从 1 起，见 §e/balatro status§f）。",
-                "例：§e/balatro playcard 1 2 3",
-                "也可全息：右键手牌选中 → 右键「▶ 出牌」。"
+        cmd("playcard", new String[]{"pc"}, "help.cmd.playcard.title", new String[]{
+                "help.cmd.playcard.1",
+                "help.cmd.playcard.2",
+                "help.cmd.playcard.3",
+                "help.cmd.playcard.4"
         });
-        cmd("disc", new String[]{"discard"}, "弃牌", new String[]{
-                "§e/balatro disc <手牌序号...>",
-                "弃 1~5 张手牌并补满（序号从 1 起）。",
-                "紫色蜡封的牌被弃时会获得一张塔罗牌。",
-                "全息：右键选中 → 右键「✗ 弃牌」。"
+        cmd("disc", new String[]{"discard"}, "help.cmd.disc.title", new String[]{
+                "help.cmd.disc.1",
+                "help.cmd.disc.2",
+                "help.cmd.disc.3",
+                "help.cmd.disc.4"
         });
-        cmd("status", new String[]{"hand"}, "查看当前局面", new String[]{
+        cmd("status", new String[]{"hand"}, "help.cmd.status.title", new String[]{
                 "§e/balatro status",
-                "显示底注 / 盲注 / 分数 / 出牌·弃牌次数 / 金钱 / 手牌。"
+                "help.cmd.status.2"
         });
-        cmd("shop", new String[]{}, "查看商店", new String[]{
+        cmd("shop", new String[]{}, "help.cmd.shop.title", new String[]{
                 "§e/balatro shop",
-                "列出商品(小丑/塔罗/星球/幻灵/游戏牌) · 补充包 · 优惠券 及价格。",
-                "仅在击败盲注后的商店阶段可用。"
+                "help.cmd.shop.2",
+                "help.cmd.shop.3"
         });
-        cmd("buy", new String[]{}, "购买商店卡牌", new String[]{
-                "§e/balatro buy <序号>",
-                "购买商店第 N 张卡牌（序号见 §e/balatro shop§f，从 1 起）。",
-                "全息：右键商品卡。"
+        cmd("buy", new String[]{}, "help.cmd.buy.title", new String[]{
+                "help.cmd.buy.1",
+                "help.cmd.buy.2",
+                "help.cmd.buy.3"
         });
-        cmd("buybag", new String[]{"pack"}, "购买补充包", new String[]{
-                "§e/balatro buybag <序号>",
-                "购买商店第 N 个补充包，购买后进入补充包选择。"
+        cmd("buybag", new String[]{"pack"}, "help.cmd.buybag.title", new String[]{
+                "help.cmd.buybag.1",
+                "help.cmd.buybag.2"
         });
-        cmd("buyvoucher", new String[]{"voucher"}, "购买优惠券", new String[]{
-                "§e/balatro buyvoucher [券序号]",
-                "购买商店陈列的优惠券；单张时可省略序号，多张时需指定序号。",
-                "（优惠券标签可给下个商店叠加额外券。）"
+        cmd("buyvoucher", new String[]{"voucher"}, "help.cmd.buyvoucher.title", new String[]{
+                "help.cmd.buyvoucher.1",
+                "help.cmd.buyvoucher.2",
+                "help.cmd.buyvoucher.3"
         });
-        cmd("reroll", new String[]{}, "重掷商店", new String[]{
+        cmd("reroll", new String[]{}, "help.cmd.reroll.title", new String[]{
                 "§e/balatro reroll",
-                "花费重掷商店商品（费用逐次 +1，优惠券「重掷红利」等可减免）。"
+                "help.cmd.reroll.2"
         });
-        cmd("next", new String[]{}, "离开商店", new String[]{
+        cmd("next", new String[]{}, "help.cmd.next.title", new String[]{
                 "§e/balatro next",
-                "离开商店，进入下一盲注的【选择阶段】（再用 §ego§f/skip 决定）。"
+                "help.cmd.next.2"
         });
-        cmd("go", new String[]{}, "开始当前盲注", new String[]{
+        cmd("go", new String[]{}, "help.cmd.go.title", new String[]{
                 "§e/balatro go",
-                "在盲注选择阶段开始当前盲注，进入出牌回合。",
-                "全息：右键「▶ 开始盲注」。"
+                "help.cmd.go.2",
+                "help.cmd.go.3"
         });
-        cmd("skip", new String[]{}, "跳过当前盲注", new String[]{
+        cmd("skip", new String[]{}, "help.cmd.skip.title", new String[]{
                 "§e/balatro skip",
-                "跳过当前盲注并获 1 个随机标签（Boss 盲注不可跳过）。",
-                "全息：右键「✗ 跳过(标签)」。"
+                "help.cmd.skip.2",
+                "help.cmd.skip.3"
         });
-        cmd("cons", new String[]{"consumables"}, "查看消耗品", new String[]{
+        cmd("cons", new String[]{"consumables"}, "help.cmd.cons.title", new String[]{
                 "§e/balatro cons",
-                "列出持有的消耗品（塔罗/星球/幻灵）及说明与序号。"
+                "help.cmd.cons.2"
         });
-        cmd("use", new String[]{}, "使用消耗品", new String[]{
-                "§e/balatro use <消耗品序号> [手牌序号...]",
-                "需指定目标的消耗品（如改写手牌的塔罗）要传手牌序号（从 1 起）。",
-                "例：§e/balatro use 1 2 3§f（用第 1 个消耗品作用于第 2、3 张手牌）。",
-                "全息：先右键手牌选中目标，再右键消耗品确认——确认按钮自动带上已选牌。",
-                "确认框会提示目标需求（如「需选中 1 张手牌」），数量不符时引擎给出精确提示。"
+        cmd("use", new String[]{}, "help.cmd.use.title", new String[]{
+                "help.cmd.use.1",
+                "help.cmd.use.2",
+                "help.cmd.use.3",
+                "help.cmd.use.4",
+                "help.cmd.use.5"
         });
-        cmd("packs", new String[]{}, "查看补充包", new String[]{
+        cmd("packs", new String[]{}, "help.cmd.packs.title", new String[]{
                 "§e/balatro packs",
-                "列出正在开启的补充包内容（仅补充包阶段）。"
+                "help.cmd.packs.2"
         });
-        cmd("pick", new String[]{}, "从补充包选卡", new String[]{
-                "§e/balatro pick <序号>",
-                "从当前补充包选第 N 张（可选张数视包而定）。"
+        cmd("pick", new String[]{}, "help.cmd.pick.title", new String[]{
+                "help.cmd.pick.1",
+                "help.cmd.pick.2"
         });
-        cmd("skipack", new String[]{}, "跳过补充包", new String[]{
+        cmd("skipack", new String[]{}, "help.cmd.skipack.title", new String[]{
                 "§e/balatro skipack",
-                "跳过当前补充包的剩余选择。"
+                "help.cmd.skipack.2"
         });
-        cmd("sellj", new String[]{}, "出售小丑", new String[]{
-                "§e/balatro sellj <序号>",
-                "出售第 N 张小丑（永恒小丑不可出售）。",
-                "全息：回合或商店阶段右键小丑牌 → 确认出售。"
+        cmd("sellj", new String[]{}, "help.cmd.sellj.title", new String[]{
+                "help.cmd.sellj.1",
+                "help.cmd.sellj.2",
+                "help.cmd.sellj.3"
         });
-        cmd("sellc", new String[]{}, "出售消耗品", new String[]{
-                "§e/balatro sellc <序号>",
-                "出售第 N 个消耗品。",
-                "全息：商店阶段右键消耗品 → 确认出售（附「确认使用」按钮，限无目标类）。"
+        cmd("sellc", new String[]{}, "help.cmd.sellc.title", new String[]{
+                "help.cmd.sellc.1",
+                "help.cmd.sellc.2",
+                "help.cmd.sellc.3"
         });
-        cmd("endless", new String[]{}, "进入无尽模式", new String[]{
+        cmd("endless", new String[]{}, "help.cmd.endless.title", new String[]{
                 "§e/balatro endless",
-                "通关（底注 8）后进入无尽模式：底注 9+，目标分指数增长。"
+                "help.cmd.endless.2"
         });
-        cmd("top", new String[]{}, "查看排行榜", new String[]{
+        cmd("top", new String[]{}, "help.cmd.top.title", new String[]{
                 "§e/balatro top",
-                "查看小丑牌排行榜（按玩家聚合：最高到达底注降序 · 累计通关次数降序）。"
+                "help.cmd.top.2"
         });
-        cmd("version", new String[]{"ver"}, "版本与版权信息", new String[]{
+        cmd("version", new String[]{"ver"}, "help.cmd.version.title", new String[]{
                 "§e/balatro version",
-                "显示当前版本号、插件作者/协作者、开源协议（Apache-2.0）与项目开源地址。"
+                "help.cmd.version.2"
         });
-        cmd("quit", new String[]{}, "放弃本局", new String[]{
+        cmd("quit", new String[]{}, "help.cmd.quit.title", new String[]{
                 "§e/balatro quit",
-                "放弃当前局（退出即弃，不存档）。下线也会自动放弃。"
+                "help.cmd.quit.2"
         });
     }
 
@@ -296,8 +329,8 @@ final class BalatroHelp {
     static boolean sendCommandHelp(org.bukkit.command.CommandSender sender, String name) {
         CmdHelp c = findCommand(name);
         if (c == null) return false;
-        sender.sendMessage(HoverText.commandify("§6■ §e" + c.key + "§6 — " + c.title));
-        for (String line : c.body) sender.sendMessage(HoverText.commandify("§f" + line));
+        sender.sendMessage(HoverText.commandify("§6■ §e" + c.key() + "§6 — " + c.title()));
+        for (String line : c.body()) sender.sendMessage(HoverText.commandify("§f" + line));
         return true;
     }
 

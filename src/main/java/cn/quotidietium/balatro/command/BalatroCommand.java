@@ -2,6 +2,7 @@ package cn.quotidietium.balatro.command;
 
 import cn.quotidietium.balatro.BalatroPlugin;
 import cn.quotidietium.balatro.engine.Engine;
+import cn.quotidietium.balatro.i18n.Lang;
 import cn.quotidietium.balatro.session.GameSession;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,13 +56,13 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("该命令只能由玩家执行。");
+            sender.sendMessage(Lang.t("cmd.err.player_only"));
             return true;
         }
         // 权限实施：plugin.yml 声明 balatro.play（默认 true）。默认配置行为不变；
         // 服务器经权限插件撤销后在此拦截（此前该节点仅为声明，未实际实施）。
         if (!player.hasPermission("balatro.play")) {
-            player.sendMessage("§c你没有使用小丑牌命令的权限（balatro.play）。");
+            player.sendMessage(Lang.t("cmd.err.no_permission"));
             return true;
         }
         // 命令层统一兜底：客户端输入一律不可信，任何子命令路径都不应向 Bukkit 命令分发器
@@ -71,9 +72,9 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         try {
             dispatch(player, args);
         } catch (RuntimeException ex) {
-            plugin.getLogger().warning("命令处理异常（玩家 " + player.getName()
-                    + "，参数 " + java.util.Arrays.toString(args) + "）：" + ex);
-            player.sendMessage("§c处理命令时出错，请重试或联系管理员。");
+            plugin.getLogger().warning(Lang.t("cmd.log.dispatch_failed",
+                    player.getName(), java.util.Arrays.toString(args), ex));
+            player.sendMessage(Lang.t("cmd.err.internal"));
         }
         return true;
     }
@@ -105,7 +106,7 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
             case "packs" -> cmdPack(player);
             case "pick" -> cmdPick(player, args);
             case "skipack" -> cmdSkipPack(player);
-            case "cancel" -> player.sendMessage("§7已取消操作。");
+            case "cancel" -> player.sendMessage(Lang.t("cmd.msg.cancelled"));
             case "top" -> cmdTop(player);
             case "version", "ver" -> cmdVersion(player);
             case "sellj" -> cmdSellJoker(player, args);
@@ -117,7 +118,7 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
     /** 打开开局向导 GUI（图形界面选择 模式/牌组/赌注/挑战/种子）。 */
     private void cmdGui(Player player) {
         if (plugin.sessionManager().isActive(player)) {
-            player.sendMessage("§c你已在一局中，先用 /balatro quit。");
+            player.sendMessage(Lang.t("gui.err.already_running"));
             return;
         }
         plugin.guiManager().openGui(player);
@@ -125,7 +126,7 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
 
     private void cmdPlay(Player player, String[] args) {
         if (plugin.sessionManager().isActive(player)) {
-            player.sendMessage("§c你已在一局中，先用 /balatro quit。");
+            player.sendMessage(Lang.t("gui.err.already_running"));
             return;
         }
         // 参数顺序不限：自动识别 牌组名 / 赌注数字 / 挑战名，其余视作种子。
@@ -147,12 +148,12 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         }
         // 种子来自客户端，必须校验（长度/字符集），拒绝非法输入
         if (seed != null && !cn.quotidietium.balatro.engine.Rng.isValidSeed(seed)) {
-            player.sendMessage("§c无效种子：仅允许字母/数字/下划线/连字符，长度 1~32。");
+            player.sendMessage(Lang.t("cmd.err.bad_seed"));
             return;
         }
         GameSession s = plugin.sessionManager().start(player, deck, stake, seed, challenge);
         if (s == null) {
-            player.sendMessage("§c开局失败（可能 RunStart 被其他插件取消）。");
+            player.sendMessage(Lang.t("gui.err.start_cancelled"));
             return;
         }
         sendRunInfo(player, s, deck, stake, challenge);
@@ -170,38 +171,37 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         cn.quotidietium.balatro.engine.Data.Deck dk = cn.quotidietium.balatro.engine.Data.deckByKey(deck);
         cn.quotidietium.balatro.engine.Data.Stake sk = cn.quotidietium.balatro.engine.Data.STAKES.get(stake);
 
-        player.sendMessage("§6━━ 小丑牌 · 本局信息 ━━");
-        StringBuilder head = new StringBuilder("§e种子 §f").append(st.seed)
-                .append("  §e牌组 §f").append(dk.name())
-                .append("  §e赌注 §f").append(sk.name());
+        player.sendMessage(Lang.t("cmd.run.title"));
+        StringBuilder head = new StringBuilder(Lang.t("cmd.run.head", st.seed, dk.name(), sk.name()));
         if (challenge != null) {
             cn.quotidietium.balatro.engine.Data.Challenge ch = findChallenge(challenge);
-            if (ch != null) head.append("  §e挑战 §f").append(ch.name());
+            if (ch != null) head.append("  ").append(Lang.t("cmd.run.head_challenge", ch.name()));
         }
         player.sendMessage(head.toString());
-        player.sendMessage("§6牌组效果：§f" + dk.desc());
-        player.sendMessage("§6赌注效果：§f" + sk.desc());
+        player.sendMessage(Lang.t("cmd.run.deck_effect", dk.desc()));
+        player.sendMessage(Lang.t("cmd.run.stake_effect", sk.desc()));
         if (challenge != null) {
             cn.quotidietium.balatro.engine.Data.Challenge ch = findChallenge(challenge);
-            if (ch != null) player.sendMessage("§6挑战效果：§f" + ch.desc());
+            if (ch != null) player.sendMessage(Lang.t("cmd.run.challenge_effect", ch.desc()));
         }
         // 开局特殊持有：本局初始拥有的优惠券 / 消耗品（牌组或挑战带来）
         java.util.List<String> startItems = new java.util.ArrayList<>();
         for (String vk : st.vouchers) {
             try {
-                startItems.add(cn.quotidietium.balatro.engine.Data.voucherByKey(vk).name + "(券)");
+                startItems.add(Lang.t("cmd.run.voucher_item",
+                        cn.quotidietium.balatro.engine.Data.voucherByKey(vk).displayName()));
             } catch (IllegalArgumentException ignored) {
-                startItems.add(vk + "(券)");
+                startItems.add(Lang.t("cmd.run.voucher_item", vk));
             }
         }
         for (var c : st.consumables) startItems.add(c.name());
         if (!startItems.isEmpty()) {
-            player.sendMessage("§6开局持有：§f" + String.join(" §7·§f ", startItems));
+            player.sendMessage(Lang.t("cmd.run.start_items", String.join(" §7·§f ", startItems)));
         }
         // 第一个 Boss 盲注（让玩家提前规划）
         cn.quotidietium.balatro.engine.Data.Boss boss = Engine.bossDef(st);
-        player.sendMessage("§6第 1 底注 Boss：§f" + boss.name + " §7— " + boss.desc);
-        player.sendMessage("§7右键手牌选中 · 出牌/弃牌；§e/balatro help§7 查看完整玩法");
+        player.sendMessage(Lang.t("cmd.run.first_boss", boss.displayName(), boss.desc()));
+        player.sendMessage(Lang.t("cmd.run.hint"));
     }
 
     private static cn.quotidietium.balatro.engine.Data.Challenge findChallenge(String key) {
@@ -248,23 +248,23 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
             // 非数字 → 视作命令名
         }
         if (!BalatroHelp.sendCommandHelp(player, arg)) {
-            player.sendMessage("§c未知命令：§e" + arg + "§c。输入 §e/balatro help§c 看分页帮助，或 §e/balatro help <命令名>§c。");
+            player.sendMessage(Lang.t("cmd.err.unknown_command", arg));
         }
     }
 
     private void cmdQuit(Player player) {
         if (!plugin.sessionManager().isActive(player)) {
-            player.sendMessage("§c当前没有进行中的局。");
+            player.sendMessage(Lang.t("cmd.err.no_run"));
             return;
         }
         plugin.sessionManager().end(player);
-        player.sendMessage("§e已放弃本局。");
+        player.sendMessage(Lang.t("cmd.msg.quit"));
     }
 
     private void cmdStatus(Player player) {
         GameSession s = plugin.sessionManager().get(player);
         if (s == null) {
-            player.sendMessage("§c当前没有进行中的局。");
+            player.sendMessage(Lang.t("cmd.err.no_run"));
             return;
         }
         player.sendMessage(s.handDebug());
@@ -289,32 +289,32 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
             player.sendMessage("§c" + r.err);
             return;
         }
-        player.sendMessage("§7已弃牌，新手牌：");
+        player.sendMessage(Lang.t("cmd.msg.discarded"));
         player.sendMessage(s.handDebug());
     }
 
     private void cmdEndless(Player player) {
         GameSession s = plugin.sessionManager().get(player);
         if (s == null) {
-            player.sendMessage("§c当前没有进行中的局。");
+            player.sendMessage(Lang.t("cmd.err.no_run"));
             return;
         }
         if (s.continueEndless()) {
-            player.sendMessage("§a进入无尽模式！");
+            player.sendMessage(Lang.t("cmd.msg.endless_on"));
             player.sendMessage(s.handDebug());
         } else {
-            player.sendMessage("§c当前无法进入无尽模式（需先通关）。");
+            player.sendMessage(Lang.t("cmd.err.endless_unavailable"));
         }
     }
 
     private GameSession requireRound(Player player) {
         GameSession s = plugin.sessionManager().get(player);
         if (s == null) {
-            player.sendMessage("§c当前没有进行中的局，用 /balatro play 开始。");
+            player.sendMessage(Lang.t("cmd.err.no_run_play"));
             return null;
         }
         if (s.state().phase != cn.quotidietium.balatro.engine.Phase.ROUND) {
-            player.sendMessage("§c当前不在出牌回合。");
+            player.sendMessage(Lang.t("cmd.err.not_round"));
             return null;
         }
         return s;
@@ -322,7 +322,7 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
 
     private List<Integer> parseIndices(Player player, GameSession s, String[] args, int from) {
         if (args.length <= from) {
-            player.sendMessage("§c用法：/balatro playcard <1-based 索引...>，例如 /balatro playcard 1 2 3");
+            player.sendMessage(Lang.t("cmd.usage.playcard"));
             return null;
         }
         List<Integer> ids = new ArrayList<>();
@@ -332,11 +332,11 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
             try {
                 idx = Integer.parseInt(args[i]);
             } catch (NumberFormatException e) {
-                player.sendMessage("§c无效的索引：" + args[i]);
+                player.sendMessage(Lang.t("cmd.err.bad_index", args[i]));
                 return null;
             }
             if (idx < 1 || idx > handSize) {
-                player.sendMessage("§c索引越界：" + idx + "（手牌 " + handSize + " 张）");
+                player.sendMessage(Lang.t("cmd.err.index_range", idx, handSize));
                 return null;
             }
             ids.add(s.state().hand.get(idx - 1).id());
@@ -349,19 +349,19 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
             player.sendMessage("§c" + r.err);
             return;
         }
-        player.sendMessage("§f出牌【" + (r.type == null ? "-" : r.type.name) + "】 得分 §e" + r.score
-                + "§f / 累计 §e" + s.state().roundScore + "§f / 目标 §e" + s.state().blindTarget);
+        player.sendMessage(Lang.t("cmd.play.scored", r.type == null ? "-" : r.type.displayName(),
+                r.score, s.state().roundScore, s.state().blindTarget));
         if (r.won) {
             if (s.state().won) {
-                player.sendMessage("§6§l通关！种子 " + s.state().seed + "，可用 /balatro endless 进入无尽模式，或 /balatro quit 结束。");
+                player.sendMessage(Lang.t("cmd.play.won", s.state().seed));
             } else if (s.state().phase == cn.quotidietium.balatro.engine.Phase.ROUND) {
-                player.sendMessage("§a通过盲注！进入下一回合。");
+                player.sendMessage(Lang.t("cmd.play.blind_cleared_next"));
                 player.sendMessage(s.handDebug());
             } else {
-                player.sendMessage("§a通过盲注！");
+                player.sendMessage(Lang.t("cmd.play.blind_cleared"));
             }
         } else if (r.lost) {
-            player.sendMessage("§4§l本局失败（未达目标分）。用 /balatro play 重新开始。");
+            player.sendMessage(Lang.t("cmd.play.lost"));
         } else {
             player.sendMessage(s.handDebug());
         }
@@ -370,35 +370,38 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
     private void cmdShop(Player player) {
         GameSession s = plugin.sessionManager().get(player);
         if (s == null || s.state().phase != cn.quotidietium.balatro.engine.Phase.SHOP) {
-            player.sendMessage("§c当前不在商店。");
+            player.sendMessage(Lang.t("cmd.err.not_shop"));
             return;
         }
         var shop = s.state().shop;
-        player.sendMessage("§6=== 商店 === §e$" + s.state().money);
+        player.sendMessage(Lang.t("cmd.shop.title", s.state().money));
         int i = 0;
         for (var c : shop.cards) {
             String label = shopCardLabel(c);
-            player.sendMessage("§e[" + (i + 1) + "] §f" + label + (c.sold ? " §7(已售)" : " §a$" + c.price));
+            String tail = c.sold ? " " + Lang.t("cmd.shop.sold") : " §a$" + c.price;
+            player.sendMessage(Lang.t("cmd.line.indexed", i + 1, label, tail));
             i++;
         }
         int j = 0;
         for (var p : shop.packs) {
-            player.sendMessage("§b[包" + (j + 1) + "] §f" + p.name + " §a$" + p.price + (p.sold ? " §7(已售)" : ""));
+            player.sendMessage(Lang.t("cmd.shop.pack_line", j + 1, p.name, p.price,
+                    p.sold ? " " + Lang.t("cmd.shop.sold") : ""));
             j++;
         }
         int vk = 0;
         for (var vch : shop.vouchers) {
-            player.sendMessage("§d[券" + (vk + 1) + "] §f" + vch.name + " §a$" + vch.price
-                    + (vch.sold ? " §7(已售)" : ""));
+            player.sendMessage(Lang.t("cmd.shop.voucher_line", vk + 1, vch.name, vch.price,
+                    vch.sold ? " " + Lang.t("cmd.shop.sold") : ""));
             vk++;
         }
-        player.sendMessage("§7/balatro buy <序号> | buybag <序号> | buyvoucher <券序号> | reroll | next");
+        player.sendMessage(Lang.t("cmd.shop.hint"));
     }
 
     private String shopCardLabel(cn.quotidietium.balatro.engine.shop.Shop.CardItem c) {
         return switch (c.kind) {
-            case "joker" -> "小丑 " + c.name + (c.joker.edition != null ? "(" + c.joker.edition.name + ")" : "");
-            case "playing" -> "游戏牌 " + c.name;
+            case "joker" -> Lang.t("cmd.label.joker", c.name)
+                    + (c.joker.edition != null ? "(" + c.joker.edition.displayName() + ")" : "");
+            case "playing" -> Lang.t("cmd.label.playing", c.name);
             default -> c.kind + " " + c.name;
         };
     }
@@ -408,8 +411,8 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         if (s == null) return;
         int idx = parseOne(player, args);
         if (idx < 0) return;
-        if (s.buyCard(idx)) player.sendMessage("§a购买成功！");
-        else player.sendMessage("§c购买失败（资金不足/槽满/已售）。");
+        if (s.buyCard(idx)) player.sendMessage(Lang.t("cmd.msg.bought"));
+        else player.sendMessage(Lang.t("cmd.err.buy_card_failed"));
         cmdShop(player);
     }
 
@@ -419,10 +422,10 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         int idx = parseOne(player, args);
         if (idx < 0) return;
         if (s.buyPack(idx)) {
-            player.sendMessage("§a购买补充包成功！");
+            player.sendMessage(Lang.t("cmd.msg.bought_pack"));
             cmdPack(player); // 直接列出内容（与 cmdBuy 重列商店一致）；pick/skipack 提示在列表尾部
         } else {
-            player.sendMessage("§c购买失败（资金不足/已售）。");
+            player.sendMessage(Lang.t("cmd.err.buy_failed"));
         }
     }
 
@@ -437,29 +440,29 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         } else {
             if (s.state().shop.vouchers.size() == 1) idx = 0;
             else if (s.state().shop.vouchers.isEmpty()) {
-                player.sendMessage("§c当前商店没有优惠券。");
+                player.sendMessage(Lang.t("cmd.err.no_vouchers"));
                 return;
             } else {
-                player.sendMessage("§c当前商店有多张优惠券，请用 §e/balatro buyvoucher <券序号>§c 指定。");
+                player.sendMessage(Lang.t("cmd.err.many_vouchers"));
                 return;
             }
         }
-        if (s.buyVoucher(idx)) player.sendMessage("§a购买优惠券成功！");
-        else player.sendMessage("§c购买失败（资金不足/已售/越界）。");
+        if (s.buyVoucher(idx)) player.sendMessage(Lang.t("cmd.msg.bought_voucher"));
+        else player.sendMessage(Lang.t("cmd.err.buy_voucher_failed"));
     }
 
     private void cmdReroll(Player player) {
         GameSession s = requireShop(player);
         if (s == null) return;
         long cost = s.reroll();
-        if (cost < 0) player.sendMessage("§c重掷失败（资金不足）。");
-        else { player.sendMessage("§a重掷成功（-$" + cost + "）。"); cmdShop(player); }
+        if (cost < 0) player.sendMessage(Lang.t("cmd.err.reroll_failed"));
+        else { player.sendMessage(Lang.t("cmd.msg.rerolled", cost)); cmdShop(player); }
     }
 
     private void cmdNext(Player player) {
         GameSession s = plugin.sessionManager().get(player);
         if (s == null || s.state().phase != cn.quotidietium.balatro.engine.Phase.SHOP) {
-            player.sendMessage("§c当前不在商店。");
+            player.sendMessage(Lang.t("cmd.err.not_shop"));
             return;
         }
         s.nextRound();
@@ -469,11 +472,11 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
     private void cmdGo(Player player) {
         GameSession s = plugin.sessionManager().get(player);
         if (s == null || s.state().phase != cn.quotidietium.balatro.engine.Phase.BLIND_SELECT) {
-            player.sendMessage("§c当前不在盲注选择阶段。");
+            player.sendMessage(Lang.t("cmd.err.not_blind_select"));
             return;
         }
         if (s.chooseBlind(false)) {
-            player.sendMessage("§a开始盲注！");
+            player.sendMessage(Lang.t("cmd.msg.blind_started"));
             player.sendMessage(s.handDebug());
         }
     }
@@ -481,17 +484,17 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
     private void cmdSkip(Player player) {
         GameSession s = plugin.sessionManager().get(player);
         if (s == null || s.state().phase != cn.quotidietium.balatro.engine.Phase.BLIND_SELECT) {
-            player.sendMessage("§c当前不在盲注选择阶段。");
+            player.sendMessage(Lang.t("cmd.err.not_blind_select"));
             return;
         }
         if (!s.chooseBlind(true)) {
-            player.sendMessage("§c无法跳过（Boss 盲注不可跳过）。");
+            player.sendMessage(Lang.t("cmd.err.skip_boss"));
             return;
         }
         // 跳过可能获得「立即开包」标签（standard/buffoon → 引擎进入补充包阶段）：
         // 全息路径由 board.update 自动列出简介，命令路径在此同步列出，避免玩家不知已进入开包
         if (s.state().phase == cn.quotidietium.balatro.engine.Phase.PACK && s.state().pack != null) {
-            player.sendMessage("§e跳过获得标签：立即开启补充包！");
+            player.sendMessage(Lang.t("cmd.msg.skip_tag_pack"));
             cmdPack(player);
             return;
         }
@@ -503,25 +506,23 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         if (s.state().phase != cn.quotidietium.balatro.engine.Phase.BLIND_SELECT) return;
         var bt = cn.quotidietium.balatro.engine.Data.BlindType.byKey(s.state().nextBlind);
         long target = cn.quotidietium.balatro.engine.Engine.blindTarget(s.state(), bt);
-        String boss = "";
         if (bt == cn.quotidietium.balatro.engine.Data.BlindType.BOSS && !s.state().bossQueue.isEmpty()) {
             var bd = cn.quotidietium.balatro.engine.Data.Boss.byKey(s.state().bossQueue.get(0));
-            boss = "（" + bd.name + "）";
-            player.sendMessage("§6下一盲注：§f底注 " + s.state().ante + " · " + blindName(bt.key) + boss
-                    + " · 目标 " + target + " 分");
-            player.sendMessage("§6Boss 效果：§f" + bd.desc);
+            player.sendMessage(Lang.t("cmd.blind.next_boss",
+                    s.state().ante, blindName(bt.key), bd.displayName(), target));
+            player.sendMessage(Lang.t("cmd.blind.boss_effect", bd.desc()));
         } else {
-            player.sendMessage("§6下一盲注：§f底注 " + s.state().ante + " · " + blindName(bt.key)
-                    + " · 目标 " + target + " 分");
+            player.sendMessage(Lang.t("cmd.blind.next", s.state().ante, blindName(bt.key), target));
         }
-        player.sendMessage("§e/balatro go §7开始盲注    §e/balatro skip §7跳过并获标签" + (bt == cn.quotidietium.balatro.engine.Data.BlindType.BOSS ? "（Boss 不可跳过）" : ""));
+        player.sendMessage(bt == cn.quotidietium.balatro.engine.Data.BlindType.BOSS
+                ? Lang.t("cmd.blind.hint_boss") : Lang.t("cmd.blind.hint"));
     }
 
     private static String blindName(String key) {
         return switch (key) {
-            case "small" -> "小盲注";
-            case "big" -> "大盲注";
-            case "boss" -> "Boss 盲注";
+            case "small" -> Lang.t("blind.small");
+            case "big" -> Lang.t("blind.big");
+            case "boss" -> Lang.t("blind.boss");
             default -> key;
         };
     }
@@ -529,7 +530,7 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
     private GameSession requireShop(Player player) {
         GameSession s = plugin.sessionManager().get(player);
         if (s == null || s.state().phase != cn.quotidietium.balatro.engine.Phase.SHOP) {
-            player.sendMessage("§c当前不在商店。");
+            player.sendMessage(Lang.t("cmd.err.not_shop"));
             return null;
         }
         return s;
@@ -537,7 +538,7 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
 
     private int parseOne(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage("§c缺少序号参数。");
+            player.sendMessage(Lang.t("cmd.err.missing_index"));
             return -1;
         }
         // 用 long 解析再转 int：避免 Integer.MIN_VALUE 等极值在「-1」时溢出回绕为正数
@@ -546,11 +547,11 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         try {
             v = Long.parseLong(args[1]);
         } catch (NumberFormatException e) {
-            player.sendMessage("§c无效序号：" + args[1]);
+            player.sendMessage(Lang.t("cmd.err.bad_number", args[1]));
             return -1;
         }
         if (v < 1 || v > Integer.MAX_VALUE) {
-            player.sendMessage("§c无效序号：" + args[1]);
+            player.sendMessage(Lang.t("cmd.err.bad_number", args[1]));
             return -1;
         }
         return (int) v - 1; // 1-based → 0-based
@@ -558,20 +559,20 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
 
     private void cmdCons(Player player) {
         GameSession s = plugin.sessionManager().get(player);
-        if (s == null) { player.sendMessage("§c当前没有进行中的局。"); return; }
-        if (s.state().consumables.isEmpty()) { player.sendMessage("§7没有消耗品。"); return; }
+        if (s == null) { player.sendMessage(Lang.t("cmd.err.no_run")); return; }
+        if (s.state().consumables.isEmpty()) { player.sendMessage(Lang.t("cmd.msg.no_consumables")); return; }
         int i = 0;
         for (var c : s.state().consumables) {
             player.sendMessage("§d[" + (i + 1) + "] §f" + c.kind + " " + c.name() + " §7" + c.desc());
             i++;
         }
-        player.sendMessage("§7/balatro use <序号> [手牌序号...]（目标手牌从 1 起）");
+        player.sendMessage(Lang.t("cmd.cons.hint"));
     }
 
     private void cmdUse(Player player, String[] args) {
         GameSession s = plugin.sessionManager().get(player);
-        if (s == null) { player.sendMessage("§c当前没有进行中的局。"); return; }
-        if (args.length < 2) { player.sendMessage("§c用法：/balatro use <消耗品序号> [手牌序号...]"); return; }
+        if (s == null) { player.sendMessage(Lang.t("cmd.err.no_run")); return; }
+        if (args.length < 2) { player.sendMessage(Lang.t("cmd.usage.use")); return; }
         // 统一经 parseOne 解析消耗品序号（与 buy/pick/sell 一致）：1-based→0-based + 越界/非数字拦截。
         // 此前手写解析是唯一缺 <0 拦截的序号命令（越界仅靠引擎兜底，且文案逊于其它命令）。
         int cidx = parseOne(player, args);
@@ -586,37 +587,37 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         List<Integer> cardIds = new ArrayList<>();
         for (int i = 2; i < args.length; i++) {
             String a = args[i];
-            if (a.isEmpty()) { player.sendMessage("§c无效参数：" + a); return; }
+            if (a.isEmpty()) { player.sendMessage(Lang.t("cmd.err.bad_arg", a)); return; }
             if (a.indexOf(':') >= 0) {
-                if (expectKindKey != null) { player.sendMessage("§c无效参数：" + a); return; }
+                if (expectKindKey != null) { player.sendMessage(Lang.t("cmd.err.bad_arg", a)); return; }
                 expectKindKey = a;
             } else if (a.charAt(0) == '@') {
-                if (snapshotIds != null) { player.sendMessage("§c无效参数：" + a); return; }
+                if (snapshotIds != null) { player.sendMessage(Lang.t("cmd.err.bad_arg", a)); return; }
                 snapshotIds = UseTargets.parseAtIds(a);
-                if (snapshotIds == null) { player.sendMessage("§c无效的目标令牌：" + a); return; }
+                if (snapshotIds == null) { player.sendMessage(Lang.t("cmd.err.bad_token", a)); return; }
             } else {
                 int hi;
                 try {
                     hi = Integer.parseInt(a);
                 } catch (NumberFormatException e) {
-                    player.sendMessage("§c无效的手牌序号：" + a);
+                    player.sendMessage(Lang.t("cmd.err.bad_hand_index", a));
                     return;
                 }
-                if (hi < 1 || hi > s.state().hand.size()) { player.sendMessage("§c手牌序号越界：" + a); return; }
+                if (hi < 1 || hi > s.state().hand.size()) { player.sendMessage(Lang.t("cmd.err.hand_index_range", a)); return; }
                 cardIds.add(s.state().hand.get(hi - 1).id());
             }
         }
         if (expectKindKey != null && !consKindKeyAt(s, cidx).equals(expectKindKey)) {
-            player.sendMessage("§c消耗品列表已变化，使用已取消。请重新右键该消耗品确认。");
+            player.sendMessage(Lang.t("cmd.err.cons_changed_use"));
             return;
         }
         if (snapshotIds != null) {
-            if (!cardIds.isEmpty()) { player.sendMessage("§c不能同时指定手牌序号与目标令牌。"); return; }
+            if (!cardIds.isEmpty()) { player.sendMessage(Lang.t("cmd.err.mixed_targets")); return; }
             // 目标侧 TOCTOU：快照 id 必须全部仍在手牌（确认到点击之间出牌/弃牌/销毁都会
             // 改写手牌），缺一即整体取消。序号会漂移而卡 id 不会——这是携带 @id 而非序号的原因。
             for (int id : snapshotIds) {
                 if (handIdAt(s, id) == null) {
-                    player.sendMessage("§c手牌已变化，使用已取消。请重新右键该消耗品确认。");
+                    player.sendMessage(Lang.t("cmd.err.hand_changed_use"));
                     return;
                 }
             }
@@ -624,7 +625,7 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         }
         var r = s.useConsumable(cidx, cardIds);
         if (!r.ok) player.sendMessage("§c" + r.err);
-        else { player.sendMessage("§a使用成功。"); cmdCons(player); }
+        else { player.sendMessage(Lang.t("cmd.msg.used")); cmdCons(player); }
     }
 
     /** 手牌中查找卡 id；未命中返回 null（目标快照 TOCTOU 校验用）。 */
@@ -644,54 +645,55 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
     private void cmdPack(Player player) {
         GameSession s = plugin.sessionManager().get(player);
         if (s == null || s.state().phase != cn.quotidietium.balatro.engine.Phase.PACK || s.state().pack == null) {
-            player.sendMessage("§c当前没有正在开启的补充包。");
+            player.sendMessage(Lang.t("cmd.err.no_open_pack"));
             return;
         }
         var pack = s.state().pack;
-        player.sendMessage("§6=== 补充包：§f" + pack.def.name + "§6（选 " + pack.left + " 张）===");
+        player.sendMessage(Lang.t("cmd.pack.title", pack.def.displayName(), pack.left));
         int i = 0;
         for (var c : pack.cards) {
             String label = switch (c.kind) {
-                case "joker" -> "小丑 " + c.name;
-                case "playing" -> "游戏牌 " + c.name;
+                case "joker" -> Lang.t("cmd.label.joker", c.name);
+                case "playing" -> Lang.t("cmd.label.playing", c.name);
                 default -> c.kind + " " + c.name;
             };
-            player.sendMessage("§e[" + (i + 1) + "] §f" + label + (c.taken ? " §7(已选)" : ""));
+            player.sendMessage(Lang.t("cmd.line.indexed", i + 1, label,
+                    c.taken ? " " + Lang.t("cmd.pack.taken") : ""));
             i++;
         }
-        player.sendMessage("§7/balatro pick <序号> | skipack");
+        player.sendMessage(Lang.t("cmd.pack.hint"));
     }
 
     private void cmdPick(Player player, String[] args) {
         GameSession s = plugin.sessionManager().get(player);
-        if (s == null || s.state().pack == null) { player.sendMessage("§c当前没有补充包。"); return; }
+        if (s == null || s.state().pack == null) { player.sendMessage(Lang.t("cmd.err.no_pack")); return; }
         int idx = parseOne(player, args);
         if (idx < 0) return;
-        if (s.pickPack(idx)) { player.sendMessage("§a已选择。"); if (s.state().phase == cn.quotidietium.balatro.engine.Phase.PACK) cmdPack(player); }
-        else player.sendMessage("§c选择失败（槽满/已选）。");
+        if (s.pickPack(idx)) { player.sendMessage(Lang.t("cmd.msg.picked")); if (s.state().phase == cn.quotidietium.balatro.engine.Phase.PACK) cmdPack(player); }
+        else player.sendMessage(Lang.t("cmd.err.pick_failed"));
     }
 
     private void cmdSkipPack(Player player) {
         GameSession s = plugin.sessionManager().get(player);
-        if (s == null || s.state().pack == null) { player.sendMessage("§c当前没有补充包。"); return; }
+        if (s == null || s.state().pack == null) { player.sendMessage(Lang.t("cmd.err.no_pack")); return; }
         s.skipPack();
-        player.sendMessage("§e已跳过补充包。");
+        player.sendMessage(Lang.t("cmd.msg.pack_skipped"));
     }
 
     private void cmdSellJoker(Player player, String[] args) {
         GameSession s = plugin.sessionManager().get(player);
-        if (s == null) { player.sendMessage("§c当前没有进行中的局。"); return; }
+        if (s == null) { player.sendMessage(Lang.t("cmd.err.no_run")); return; }
         int idx = parseOne(player, args);
         if (idx < 0) return;
         // 全息「确认出售」按钮在第 3 参数携带期望 joker key：确认后到点击前小丑列表
         // 可能已被改写（幻灵 hex/ankh、命令出售等），序号可能指向另一张小丑——
         // 校验不一致则取消，防止错位卖错。手动输入不带标识则跳过校验（向后兼容）。
         if (args.length >= 3 && !jokerKeyAt(s, idx).equals(args[2])) {
-            player.sendMessage("§c小丑列表已变化，出售已取消。请重新右键该小丑确认。");
+            player.sendMessage(Lang.t("cmd.err.joker_changed_sell"));
             return;
         }
-        if (s.sellJoker(idx)) player.sendMessage("§a小丑已出售！");
-        else player.sendMessage("§c出售失败（永恒/无效）。");
+        if (s.sellJoker(idx)) player.sendMessage(Lang.t("cmd.msg.joker_sold"));
+        else player.sendMessage(Lang.t("cmd.err.sell_joker_failed"));
     }
 
     /** 当前小丑 idx 处的期望 key；越界返回空串（必不匹配，走「列表已变化」取消）。 */
@@ -702,18 +704,18 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
 
     private void cmdSellConsumable(Player player, String[] args) {
         GameSession s = plugin.sessionManager().get(player);
-        if (s == null) { player.sendMessage("§c当前没有进行中的局。"); return; }
+        if (s == null) { player.sendMessage(Lang.t("cmd.err.no_run")); return; }
         int idx = parseOne(player, args);
         if (idx < 0) return;
         // 全息「确认出售」按钮在第 3 参数携带期望 kind:key：确认后到点击前消耗品列表
         // 可能已变化（使用/出售收缩列表），序号可能指向另一个消耗品——
         // 校验不一致则取消，防止错位卖错。手动输入不带标识则跳过校验（向后兼容）。
         if (args.length >= 3 && !consKindKeyAt(s, idx).equals(args[2])) {
-            player.sendMessage("§c消耗品列表已变化，出售已取消。请重新右键该消耗品确认。");
+            player.sendMessage(Lang.t("cmd.err.cons_changed_sell"));
             return;
         }
-        if (s.sellConsumable(idx)) player.sendMessage("§a消耗品已出售！");
-        else player.sendMessage("§c出售失败（无效）。");
+        if (s.sellConsumable(idx)) player.sendMessage(Lang.t("cmd.msg.cons_sold"));
+        else player.sendMessage(Lang.t("cmd.err.sell_failed"));
     }
 
     /** 显示版本与版权信息（版本号来自 plugin.yml，构建时注入 Gradle 版本）。 */
@@ -729,7 +731,7 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
         long now = System.currentTimeMillis();
         Long last = lastTop.get(player.getUniqueId());
         if (last != null && now - last < TOP_THROTTLE_MS) {
-            player.sendMessage("§7查询过于频繁，请稍后再试。");
+            player.sendMessage(Lang.t("cmd.err.throttled"));
             return;
         }
         lastTop.put(player.getUniqueId(), now);
@@ -743,11 +745,11 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
             aggregated = plugin.services().leaderboard().topAggregated(10);
         } catch (RuntimeException ex) {
             // 第三方排行榜服务异常：不向上击穿命令，降级为友好提示
-            plugin.getLogger().warning("LeaderboardService.topAggregated 异常：" + ex);
-            player.sendMessage("§c排行榜服务暂不可用，请稍后再试。");
+            plugin.getLogger().warning(Lang.t("cmd.log.leaderboard_failed", ex));
+            player.sendMessage(Lang.t("cmd.err.leaderboard_unavailable"));
             return;
         }
-        if (aggregated.isEmpty()) { player.sendMessage("§7暂无记录。"); return; }
+        if (aggregated.isEmpty()) { player.sendMessage(Lang.t("cmd.msg.no_records")); return; }
         // 补玩家名后在 Bukkit 层做完整三级排序：bestAnte 降序 → winCount 降序 → 玩家名升序
         java.util.List<String[]> rows = new java.util.ArrayList<>(); // {name, bestAnte, winCount}
         for (var ps : aggregated) {
@@ -762,13 +764,13 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
             if (wcA != wcB) return Integer.compare(wcB, wcA); // 降序
             return a[0].compareToIgnoreCase(b[0]); // 玩家名升序
         });
-        player.sendMessage("§6=== 小丑牌排行榜（最高底注 · 通关次数）===");
+        player.sendMessage(Lang.t("cmd.top.title"));
         int rank = 1;
         for (var row : rows) {
             int ante = Integer.parseInt(row[1]);
             int wc = Integer.parseInt(row[2]);
-            String anteStr = ante > 8 ? "§d无尽" + ante : "§f底注" + ante;
-            player.sendMessage(String.format("§e#%d §f%s §7%s §b通关%d次", rank++, row[0], anteStr, wc));
+            String anteStr = ante > 8 ? Lang.t("cmd.top.endless", ante) : Lang.t("cmd.top.ante", ante);
+            player.sendMessage(Lang.t("cmd.top.row", rank++, row[0], anteStr, wc));
         }
     }
 
@@ -781,27 +783,39 @@ public final class BalatroCommand implements CommandExecutor, TabCompleter {
      * 由 {@link HoverText} 从帮助注册表生成——文案只维护 {@link BalatroHelp} 一份。
      */
     private void sendHelp(Player player) {
-        player.sendMessage("§6=== 小丑牌 /balatro ===");
-        player.sendMessage(HoverText.commandify(
-                "§7新手推荐图形界面开局：§e/balatro gui§7；下列命令悬浮可看详情与举例、点击可回填。"));
-        player.sendMessage(HoverText.commandify(
-                "§7完整玩法（牌组/赌注/挑战/计分）：§e/balatro help [页码]§7；单命令详情：§e/balatro help <命令名>"));
-        player.sendMessage("§6■ 通用");
-        player.sendMessage(line(t("gui"), " 图形界面开局  ", t("play"), " 命令开局  ", t("status"), " 查看局面"));
-        player.sendMessage(line(t("endless"), " 无尽模式  ", t("top"), " 排行榜  ", t("quit"), " 放弃本局"));
-        player.sendMessage("§6■ 出牌回合");
-        player.sendMessage(line(t("playcard"), " 出牌  ", t("disc"), " 弃牌（各 1~5 张）"));
-        player.sendMessage("§6■ 盲注选择（商店 next 之后）");
-        player.sendMessage(line(t("go"), " 开始盲注  ", t("skip"), " 跳过并获标签（Boss 不可跳过）"));
-        player.sendMessage("§6■ 商店（可右键持有牌出售）");
-        player.sendMessage(line(t("shop"), " 查看  ", t("buy"), " 买卡  ", t("buybag"), " 买补充包"));
-        player.sendMessage(line(t("buyvoucher"), " 买券  ", t("reroll"), " 重掷  ", t("next"), " 离开商店"));
-        player.sendMessage("§6■ 消耗品（塔罗 / 星球 / 幻灵）");
-        player.sendMessage(line(t("cons"), " 查看  ", t("use"), " 使用"));
-        player.sendMessage("§6■ 补充包");
-        player.sendMessage(line(t("packs"), " 查看  ", t("pick"), " 选卡  ", t("skipack"), " 跳过"));
-        player.sendMessage("§6■ 出售");
-        player.sendMessage(line(t("sellj"), " 卖小丑  ", t("sellc"), " 卖消耗品"));
+        player.sendMessage(Lang.t("cmd.help.title"));
+        player.sendMessage(HoverText.commandify(Lang.t("cmd.help.intro")));
+        player.sendMessage(HoverText.commandify(Lang.t("cmd.help.full")));
+        player.sendMessage(Lang.t("cmd.help.sec.general"));
+        player.sendMessage(line(t("gui"), " ", Lang.t("cmd.help.d.gui"), "  ",
+                t("play"), " ", Lang.t("cmd.help.d.play"), "  ",
+                t("status"), " ", Lang.t("cmd.help.d.status")));
+        player.sendMessage(line(t("endless"), " ", Lang.t("cmd.help.d.endless"), "  ",
+                t("top"), " ", Lang.t("cmd.help.d.top"), "  ",
+                t("quit"), " ", Lang.t("cmd.help.d.quit")));
+        player.sendMessage(Lang.t("cmd.help.sec.round"));
+        player.sendMessage(line(t("playcard"), " ", Lang.t("cmd.help.d.playcard"), "  ",
+                t("disc"), " ", Lang.t("cmd.help.d.disc")));
+        player.sendMessage(Lang.t("cmd.help.sec.blind"));
+        player.sendMessage(line(t("go"), " ", Lang.t("cmd.help.d.go"), "  ",
+                t("skip"), " ", Lang.t("cmd.help.d.skip")));
+        player.sendMessage(Lang.t("cmd.help.sec.shop"));
+        player.sendMessage(line(t("shop"), " ", Lang.t("cmd.help.d.view"), "  ",
+                t("buy"), " ", Lang.t("cmd.help.d.buy"), "  ",
+                t("buybag"), " ", Lang.t("cmd.help.d.buybag")));
+        player.sendMessage(line(t("buyvoucher"), " ", Lang.t("cmd.help.d.buyvoucher"), "  ",
+                t("reroll"), " ", Lang.t("cmd.help.d.reroll"), "  ",
+                t("next"), " ", Lang.t("cmd.help.d.next")));
+        player.sendMessage(Lang.t("cmd.help.sec.cons"));
+        player.sendMessage(line(t("cons"), " ", Lang.t("cmd.help.d.view"), "  ",
+                t("use"), " ", Lang.t("cmd.help.d.use")));
+        player.sendMessage(Lang.t("cmd.help.sec.packs"));
+        player.sendMessage(line(t("packs"), " ", Lang.t("cmd.help.d.view"), "  ",
+                t("pick"), " ", Lang.t("cmd.help.d.pick"), "  ",
+                t("skipack"), " ", Lang.t("cmd.help.d.skipack")));
+        player.sendMessage(Lang.t("cmd.help.sec.sell"));
+        player.sendMessage(line(t("sellj"), " ", Lang.t("cmd.help.d.sellj"), "  ",
+                t("sellc"), " ", Lang.t("cmd.help.d.sellc")));
     }
 
     /** 可悬浮/可点击的命令令牌（显示裸命令名，悬浮 = 详情与举例，点击 = 回填 /balatro <主键>）。 */

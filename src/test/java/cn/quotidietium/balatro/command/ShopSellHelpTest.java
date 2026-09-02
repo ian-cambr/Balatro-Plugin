@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import cn.quotidietium.balatro.i18n.Lang;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -18,6 +21,18 @@ import org.junit.jupiter.api.Test;
  * </ul>
  */
 class ShopSellHelpTest {
+
+
+    /** 本类断言的是原版中文文案，故固定跑在 zh_CN 下（同时兼作 zh_CN 覆盖度检查）。 */
+    @BeforeAll
+    static void useChinese() {
+        Lang.load("zh_CN", null);
+    }
+
+    @AfterAll
+    static void restoreDefaultLocale() {
+        Lang.reset();
+    }
 
     @Test
     void selljHelpMentionsShopPhase() {

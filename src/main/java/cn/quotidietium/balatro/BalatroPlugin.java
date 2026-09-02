@@ -6,6 +6,7 @@ import cn.quotidietium.balatro.api.event.BalatroHandScoreEvent;
 import cn.quotidietium.balatro.api.event.BalatroRunEndEvent;
 import cn.quotidietium.balatro.api.event.BalatroRunStartEvent;
 import cn.quotidietium.balatro.command.BalatroCommand;
+import cn.quotidietium.balatro.i18n.Lang;
 import cn.quotidietium.balatro.service.Services;
 import cn.quotidietium.balatro.session.SessionListener;
 import cn.quotidietium.balatro.session.SessionManager;
@@ -30,6 +31,14 @@ public final class BalatroPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // 配置先落盘 + 补齐默认值，随后按 config.yml 的 language 载入语言文件；
+        // 必须早于任何 Lang.t() 调用。
+        saveDefaultConfig();
+        getConfig().options().copyDefaults(true);
+        saveConfig();
+        Lang.load(getConfig().getString("language", Lang.DEFAULT_LOCALE), getDataFolder().toPath());
+        getLogger().info("Language: " + Lang.locale());
+
         services = new Services();
         // 持久化统计（文件）+ 基于其的排行榜
         services.setStats(new cn.quotidietium.balatro.service.FileStats(
@@ -42,14 +51,11 @@ public final class BalatroPlugin extends JavaPlugin {
             cn.quotidietium.balatro.service.VaultEconomy ve = new cn.quotidietium.balatro.service.VaultEconomy(getLogger());
             if (ve.available()) {
                 services.setEconomy(ve);
-                getLogger().info("已接入 Vault 经济。");
+                getLogger().info(Lang.t("log.vault_hooked"));
             }
         }
         // 默认奖励：过关节点经 EconomyService 发放（计划书 §7.2；0.4.60 起默认生效，
         // config reward.economy.enabled=false 可整体关闭）。无 Vault 时 deposit 无副作用。
-        saveDefaultConfig();
-        getConfig().options().copyDefaults(true);
-        saveConfig();
         if (getConfig().getBoolean("reward.economy.enabled", true)) {
             services.setReward(new cn.quotidietium.balatro.service.EconomyReward(
                     services::economy,
@@ -92,11 +98,11 @@ public final class BalatroPlugin extends JavaPlugin {
                 }
             }
         } catch (RuntimeException ex) {
-            getLogger().warning("残留牌桌实体清扫失败：" + ex);
+            getLogger().warning(Lang.t("log.sweep_failed", ex));
             return;
         }
         if (removed > 0) {
-            getLogger().info("已清扫 " + removed + " 个残留牌桌实体。");
+            getLogger().info(Lang.t("log.sweep_done", removed));
         }
     }
 
@@ -136,7 +142,7 @@ public final class BalatroPlugin extends JavaPlugin {
         try {
             getServer().getPluginManager().callEvent(ev);
         } catch (RuntimeException ex) {
-            getLogger().warning("BalatroRunStartEvent 监听器异常（按未取消继续）：" + ex);
+            getLogger().warning(Lang.t("log.event_failed_cancellable", "BalatroRunStartEvent", ex));
         }
         return new RunStartDecision(ev.isCancelled());
     }
@@ -146,7 +152,7 @@ public final class BalatroPlugin extends JavaPlugin {
             getServer().getPluginManager().callEvent(
                     new BalatroHandScoreEvent(player, handType, score, roundScore, target, handsLeft));
         } catch (RuntimeException ex) {
-            getLogger().warning("BalatroHandScoreEvent 监听器异常：" + ex);
+            getLogger().warning(Lang.t("log.event_failed", "BalatroHandScoreEvent", ex));
         }
     }
 
@@ -155,7 +161,7 @@ public final class BalatroPlugin extends JavaPlugin {
             getServer().getPluginManager().callEvent(
                     new BalatroBlindResultEvent(player, ante, blindType, target, score, cleared));
         } catch (RuntimeException ex) {
-            getLogger().warning("BalatroBlindResultEvent 监听器异常：" + ex);
+            getLogger().warning(Lang.t("log.event_failed", "BalatroBlindResultEvent", ex));
         }
     }
 
@@ -163,7 +169,7 @@ public final class BalatroPlugin extends JavaPlugin {
         try {
             getServer().getPluginManager().callEvent(new BalatroAnteClearEvent(player, ante));
         } catch (RuntimeException ex) {
-            getLogger().warning("BalatroAnteClearEvent 监听器异常：" + ex);
+            getLogger().warning(Lang.t("log.event_failed", "BalatroAnteClearEvent", ex));
         }
     }
 
@@ -172,7 +178,7 @@ public final class BalatroPlugin extends JavaPlugin {
             getServer().getPluginManager().callEvent(
                     new BalatroRunEndEvent(player, won, anteReached, seed, deckKey, stakeIdx));
         } catch (RuntimeException ex) {
-            getLogger().warning("BalatroRunEndEvent 监听器异常：" + ex);
+            getLogger().warning(Lang.t("log.event_failed", "BalatroRunEndEvent", ex));
         }
     }
 

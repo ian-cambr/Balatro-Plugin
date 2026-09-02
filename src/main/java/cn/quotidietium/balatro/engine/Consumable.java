@@ -17,18 +17,18 @@ public final class Consumable {
 
     public String name() {
         return switch (kind) {
-            case "tarot" -> Data.Tarot.byKey(key).name;
-            case "planet" -> Data.Planet.byKey(key).name;
-            case "spectral" -> Data.Spectral.byKey(key).name;
+            case "tarot" -> Data.Tarot.byKey(key).displayName();
+            case "planet" -> Data.Planet.byKey(key).displayName();
+            case "spectral" -> Data.Spectral.byKey(key).displayName();
             default -> key;
         };
     }
 
     public String desc() {
         return switch (kind) {
-            case "tarot" -> Data.Tarot.byKey(key).desc;
-            case "planet" -> Data.Planet.byKey(key).desc;
-            case "spectral" -> Data.Spectral.byKey(key).desc;
+            case "tarot" -> Data.Tarot.byKey(key).desc();
+            case "planet" -> Data.Planet.byKey(key).desc();
+            case "spectral" -> Data.Spectral.byKey(key).desc();
             default -> "";
         };
     }

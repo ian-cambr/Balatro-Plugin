@@ -1,6 +1,9 @@
 package cn.quotidietium.balatro.engine;
 
 import cn.quotidietium.balatro.engine.consumable.Consumables;
+import cn.quotidietium.balatro.i18n.Lang;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,6 +19,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 与实机 check32 互补：此处锁引擎语义，实机锁 @ids UI 链。
  */
 class BossPsychicConsumableTargetTest {
+
+
+    /** 本类断言的是原版中文文案，故固定跑在 zh_CN 下（同时兼作 zh_CN 覆盖度检查）。 */
+    @BeforeAll
+    static void useChinese() {
+        Lang.load("zh_CN", null);
+    }
+
+    @AfterAll
+    static void restoreDefaultLocale() {
+        Lang.reset();
+    }
 
     /** 直接进入 ante1 的 psychic Boss 回合（B2351 种子 bossKey=psychic，扫描锁定）。 */
     private RunState psychicRound() {

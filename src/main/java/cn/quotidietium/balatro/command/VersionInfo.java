@@ -1,5 +1,6 @@
 package cn.quotidietium.balatro.command;
 
+import cn.quotidietium.balatro.i18n.Lang;
 import java.util.List;
 
 /**
@@ -13,13 +14,13 @@ final class VersionInfo {
     /** 版本与版权信息行；{@code version} 为当前插件版本。 */
     static List<String> lines(String version) {
         return List.of(
-                "§6━━ 小丑牌 (Balatro) ━━",
-                "§f当前版本：§e" + version,
-                "§f插件作者：§eZTF3",
-                "§f协作者：§eDalict",
-                "§f本项目遵循 §eApache-2.0 license§f 开源协议",
-                "§f开源地址：§bhttps://github.com/hershate/Balatro-Plugin",
-                "§f本项目的商业版本由 §eDalict§f 负责管理");
+                Lang.t("about.title"),
+                Lang.t("about.version", version),
+                Lang.t("about.author"),
+                Lang.t("about.collaborator"),
+                Lang.t("about.license"),
+                Lang.t("about.source"),
+                Lang.t("about.commercial"));
     }
 
     private VersionInfo() {

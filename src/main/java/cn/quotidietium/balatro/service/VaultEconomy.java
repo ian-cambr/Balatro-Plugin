@@ -1,6 +1,7 @@
 package cn.quotidietium.balatro.service;
 
 import cn.quotidietium.balatro.api.service.EconomyService;
+import cn.quotidietium.balatro.i18n.Lang;
 import java.lang.reflect.Method;
 import java.util.UUID;
 import org.bukkit.Bukkit;
@@ -108,7 +109,7 @@ public final class VaultEconomy implements EconomyService {
     /** 经济调用失败留痕（FINE：默认配置不刷屏，排查时可开级别）。 */
     private void logFine(String op, Throwable e) {
         if (logger != null) {
-            logger.log(java.util.logging.Level.FINE, "Vault 经济调用失败（" + op + "）：" + e);
+            logger.log(java.util.logging.Level.FINE, Lang.t("log.vault_failed", op, e));
         }
     }
 }

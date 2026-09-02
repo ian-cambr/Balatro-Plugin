@@ -1,15 +1,28 @@
-# Balatro 插件配置
-# 缺失的键会在启动时自动补齐默认值（热补齐），无需手动维护完整结构。
-# 改动本文件后需重启服务器生效（当前无 /reload 热载）。
+# Balatro plugin configuration
+# Missing keys are filled in with their defaults on startup, so you never have to
+# maintain the full structure by hand.
+# Changes take effect after a server restart (there is no hot /reload yet).
+
+# Language used for all in-game text, GUI labels and console messages.
+# Shipped translations: en_US (English), zh_CN (Simplified Chinese).
+# Any key missing from the chosen language falls back to en_US, and a key missing
+# from both is shown as the key itself so gaps are visible in game.
+# To add or override a language, drop a file at
+#   plugins/Balatro/lang/<locale>.properties
+# It is merged over the built-in file of the same name, so you only need the keys
+# you actually want to change.
+language: en_US
 
 reward:
   economy:
-    # 过关奖励经 EconomyService 发放到服务器经济（需装 Vault + 经济插件才有实际到账；
-    # 未装时本开关无副作用）。设为 false 则整体停用（回落空操作）。
+    # Clear-rewards are paid out through EconomyService into the server economy
+    # (Vault + an economy plugin are required for the money to actually land;
+    # without them this switch has no side effects). Set to false to disable the
+    # whole feature (it degrades to a no-op).
     enabled: true
-    # 通过一个盲注（小/大/Boss）发放的金额；0 = 关闭该档。
+    # Paid for beating a single blind (Small/Big/Boss); 0 disables that tier.
     blind: 1
-    # 通过一个底注（击败其 Boss）发放的金额。
+    # Paid for clearing a whole ante (beating its Boss).
     ante: 10
-    # 通关一局（ante 8）发放的金额；失败不发。
+    # Paid for winning a run (ante 8); nothing is paid on a loss.
     win: 100

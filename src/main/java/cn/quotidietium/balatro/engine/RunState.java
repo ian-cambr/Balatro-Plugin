@@ -1,5 +1,6 @@
 package cn.quotidietium.balatro.engine;
 
+import cn.quotidietium.balatro.i18n.Lang;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -309,11 +310,11 @@ public final class RunState {
     public boolean sellJoker(int idx) {
         if (idx < 0 || idx >= jokers.size()) return false;
         JokerInstance j = jokers.get(idx);
-        if (j.eternal) { msg("永恒小丑不可出售"); return false; }
+        if (j.eternal) { msg(Lang.t("msg.eternal_no_sell")); return false; }
         int val = sellValue(j);
         jokers.remove(idx);
         gainMoney(val);
-        msg("出售 " + j.def.displayName() + " +$" + val);
+        msg(Lang.t("msg.sold_joker", j.def.displayName(), val));
         j.def.onSell(this, j);
         List<JokerInstance> anySellSnap = acquireJokerSnap(); // P10：池化快照
         try {
@@ -327,7 +328,7 @@ public final class RunState {
         if (bossLeaf) {
             bossLeaf = false;
             for (Card c : hand) c.setDebuff(false);
-            msg("翠绿之叶：失效解除");
+            msg(Lang.t("msg.verdant_cleared"));
         }
         Engine.recomputeFlags(this);
         return true;
@@ -339,7 +340,7 @@ public final class RunState {
         Consumable c = consumables.remove(idx);
         int val = sellValueC(c);
         gainMoney(val);
-        msg("出售消耗品 +$" + val);
+        msg(Lang.t("msg.sold_consumable", val));
         return true;
     }
 
@@ -360,8 +361,8 @@ public final class RunState {
 
     /** 卡牌可读名。 */
     public String cardName(Card c) {
-        if (c.isStone()) return "石头牌";
-        return Data.Suit.byIndex(c.suit()).name + Data.rankName(c.rank());
+        if (c.isStone()) return Lang.t("card.stone_card");
+        return Data.Suit.byIndex(c.suit()).displayName() + Data.rankName(c.rank());
     }
 
     /** 从牌组/牌堆/手牌/弃牌堆移除一张牌。 */
@@ -397,17 +398,17 @@ public final class RunState {
                 // R137：池口径抽取为 tarotGrantPool（P12 共享池语义不变，与 ctx 版共用）
                 List<Data.Tarot> pool = tarotGrantPool();
                 Data.Tarot t = pool.isEmpty() ? null : stream("consumable").pick(pool);
-                if (t != null && addConsumableKey("tarot", t.key)) msg("获得：" + t.name);
+                if (t != null && addConsumableKey("tarot", t.key)) msg(Lang.t("msg.gained", t.displayName()));
             }
             case "planet" -> {
                 Data.Planet p = stream("consumable").pick(Data.PLANETS);
-                if (addConsumableKey("planet", p.key)) msg("获得：" + p.name);
+                if (addConsumableKey("planet", p.key)) msg(Lang.t("msg.gained", p.displayName()));
             }
             default -> {
                 // R137：池口径抽取为 spectralGrantPool（R128 去 SPECIAL + 禁入，与 ctx 版共用）
                 List<Data.Spectral> pool = spectralGrantPool();
                 Data.Spectral sp = pool.isEmpty() ? null : stream("consumable").pick(pool);
-                if (sp != null && addConsumableKey("spectral", sp.key)) msg("获得：" + sp.name);
+                if (sp != null && addConsumableKey("spectral", sp.key)) msg(Lang.t("msg.gained", sp.displayName()));
             }
         }
     }
@@ -508,7 +509,7 @@ public final class RunState {
         if (j == null) return false;
         if (edition != null) j.edition = edition;
         jokers.add(j);
-        msg("获得小丑：" + cn.quotidietium.balatro.engine.joker.JokerRegistry.nameOf(key));
+        msg(Lang.t("msg.joker_gained", cn.quotidietium.balatro.engine.joker.JokerRegistry.nameOf(key)));
         // 原版 gainJoker 即 computeFlags：新小丑的 flags（fourFingers/splash/handSize 等）
         // 须立即对后续计分/回合生效（如回合中用「审判」获得带 flags 的小丑）
         Engine.recomputeFlags(this);

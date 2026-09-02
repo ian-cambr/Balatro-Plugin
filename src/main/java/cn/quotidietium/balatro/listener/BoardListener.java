@@ -1,6 +1,7 @@
 package cn.quotidietium.balatro.listener;
 
 import cn.quotidietium.balatro.BalatroPlugin;
+import cn.quotidietium.balatro.i18n.Lang;
 import cn.quotidietium.balatro.render.RoundBoard;
 import cn.quotidietium.balatro.session.GameSession;
 import java.util.HashMap;
@@ -75,8 +76,7 @@ public final class BoardListener implements Listener {
             dispatch(player, session, session.board(), action, player.isSneaking());
         } catch (RuntimeException ex) {
             // 交互派发绝不向事件/网络层抛异常（防止异常客户端输入造成踢出/报错）
-            plugin.getLogger().warning("牌桌交互处理异常（玩家 " + player.getName()
-                    + "，动作 " + action + "）：" + ex);
+            plugin.getLogger().warning(Lang.t("log.board_interact_failed", player.getName(), action, ex));
         }
     }
 
@@ -97,14 +97,14 @@ public final class BoardListener implements Listener {
             case "play" -> { board.playSelected(); click(player, 1.2f); }
             case "discard" -> { board.discardSelected(); click(player, 0.8f); }
             case "reroll" -> {
-                if (session.reroll() < 0) fail(player, "重掷失败（资金不足）");
+                if (session.reroll() < 0) fail(player, Lang.t("err.reroll_failed"));
                 else board.refreshShopInfo(); // 商品/价格全变，刷新聊天框简介防误导
                 click(player, 1.0f);
             }
             case "next" -> { session.nextRound(); click(player, 1.2f); }
             case "go" -> { session.chooseBlind(false); click(player, 1.2f); }
             case "skip" -> {
-                if (!session.chooseBlind(true)) fail(player, "无法跳过（Boss 盲注不可跳过）");
+                if (!session.chooseBlind(true)) fail(player, Lang.t("err.skip_boss"));
                 click(player, 0.8f);
             }
             case "skipack" -> { session.skipPack(); click(player, 0.8f); }
@@ -118,19 +118,19 @@ public final class BoardListener implements Listener {
                 } else if (act.startsWith("shop:")) {
                     Integer i = parseIntSafe(act.substring("shop:".length()));
                     if (i != null) {
-                        if (!session.buyCard(i)) fail(player, "购买失败（资金不足/槽满/已售）");
+                        if (!session.buyCard(i)) fail(player, Lang.t("err.buy_card_failed"));
                         click(player, 1.0f);
                     }
                 } else if (act.startsWith("shoppack:")) {
                     Integer i = parseIntSafe(act.substring("shoppack:".length()));
                     if (i != null) {
-                        if (!session.buyPack(i)) fail(player, "购买失败（资金不足/已售）");
+                        if (!session.buyPack(i)) fail(player, Lang.t("err.buy_failed"));
                         click(player, 1.0f);
                     }
                 } else if (act.startsWith("pick:")) {
                     Integer i = parseIntSafe(act.substring("pick:".length()));
                     if (i != null) {
-                        if (!session.pickPack(i)) fail(player, "选择失败（槽满/已选）");
+                        if (!session.pickPack(i)) fail(player, Lang.t("err.pick_failed"));
                         click(player, 1.2f);
                     }
                 } else if (act.startsWith("joker:")) {
@@ -142,7 +142,7 @@ public final class BoardListener implements Listener {
                 } else if (act.startsWith("voucher:")) {
                     Integer i = parseIntSafe(act.substring("voucher:".length()));
                     if (i != null) {
-                        if (!session.buyVoucher(i)) fail(player, "购买失败（资金不足/已售）");
+                        if (!session.buyVoucher(i)) fail(player, Lang.t("err.buy_failed"));
                         click(player, 1.0f);
                     }
                 } else if (act.startsWith("cons:")) {

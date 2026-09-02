@@ -1,5 +1,6 @@
 package cn.quotidietium.balatro.engine;
 
+import cn.quotidietium.balatro.i18n.Lang;
 import java.util.List;
 
 /**
@@ -100,18 +101,18 @@ public final class ScoreContext {
             java.util.List<Data.Tarot> pool = state.tarotGrantPool();
             if (!pool.isEmpty()) {
                 Data.Tarot t = state.stream("consumable").pick(pool);
-                if (state.addConsumableKey("tarot", t.key)) name = t.name;
+                if (state.addConsumableKey("tarot", t.key)) name = t.displayName();
             }
         } else if ("planet".equals(kind)) {
             Data.Planet p = state.stream("consumable").pick(Data.PLANETS);
-            if (state.addConsumableKey("planet", p.key)) name = p.name;
+            if (state.addConsumableKey("planet", p.key)) name = p.displayName();
         } else {
             java.util.List<Data.Spectral> pool = state.spectralGrantPool();
             if (!pool.isEmpty()) {
                 Data.Spectral sp = state.stream("consumable").pick(pool);
-                if (state.addConsumableKey("spectral", sp.key)) name = sp.name;
+                if (state.addConsumableKey("spectral", sp.key)) name = sp.displayName();
             }
         }
-        if (name != null) events.add("获得：" + name);
+        if (name != null) events.add(Lang.t("msg.gained", name));
     }
 }

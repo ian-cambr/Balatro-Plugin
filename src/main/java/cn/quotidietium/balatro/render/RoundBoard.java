@@ -9,6 +9,7 @@ import cn.quotidietium.balatro.engine.Consumable;
 import cn.quotidietium.balatro.engine.Phase;
 import cn.quotidietium.balatro.engine.RunState;
 import cn.quotidietium.balatro.engine.consumable.Consumables;
+import cn.quotidietium.balatro.i18n.Lang;
 import cn.quotidietium.balatro.session.GameSession;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -203,12 +204,12 @@ public final class RoundBoard {
     /** 向玩家发送操作说明（聊天框）。 */
     private void sendControls() {
         Player p = session.player();
-        p.sendMessage(Component.text("━━ 小丑牌 · 操作说明 ━━", NamedTextColor.GOLD));
-        p.sendMessage(Component.text("直接右键 = 使用/操作", NamedTextColor.WHITE)
-                .append(Component.text("（选中手牌 · 购买商品 · 选择补充包卡 · 使用/出售消耗品 · 出售小丑 · 出牌/弃牌/重掷/下一回合）", NamedTextColor.GRAY)));
-        p.sendMessage(Component.text("Shift + 右键 = 查看该卡简介", NamedTextColor.AQUA)
-                .append(Component.text("（简介发到聊天框）", NamedTextColor.GRAY)));
-        p.sendMessage(Component.text("进入商店/补充包时会自动列出全部简介，便于判断。", NamedTextColor.DARK_GRAY));
+        p.sendMessage(Component.text(Lang.t("board.help.title"), NamedTextColor.GOLD));
+        p.sendMessage(Component.text(Lang.t("board.help.rmb"), NamedTextColor.WHITE)
+                .append(Component.text(Lang.t("board.help.rmb.detail"), NamedTextColor.GRAY)));
+        p.sendMessage(Component.text(Lang.t("board.help.shift"), NamedTextColor.AQUA)
+                .append(Component.text(Lang.t("board.help.shift.detail"), NamedTextColor.GRAY)));
+        p.sendMessage(Component.text(Lang.t("board.help.auto"), NamedTextColor.DARK_GRAY));
     }
 
     /**
@@ -372,17 +373,17 @@ public final class RoundBoard {
         // 状态栏
         String blind = state.blindType == null ? "-" : state.blindType.key;
         String boss = state.blindType == Data.BlindType.BOSS && !state.bossQueue.isEmpty()
-                ? "（" + Data.Boss.byKey(state.bossQueue.get(0)).name + "）" : "";
+                ? "（" + Data.Boss.byKey(state.bossQueue.get(0)).displayName() + "）" : "";
         var sb = Component.text()
-                .append(Component.text("底注 " + state.ante + "  " + blindName(blind) + boss, NamedTextColor.GOLD)).appendNewline()
-                .append(Component.text("分数 " + state.roundScore + " / " + state.blindTarget, NamedTextColor.WHITE)).appendNewline()
-                .append(Component.text("出牌 " + state.handsLeft + "  弃牌 " + state.discardsLeft + "  $" + state.money
-                        + "  选中 " + selected.size(), NamedTextColor.YELLOW));
+                .append(Component.text(Lang.t("board.round.ante", state.ante, blindName(blind), boss), NamedTextColor.GOLD)).appendNewline()
+                .append(Component.text(Lang.t("board.round.score", state.roundScore, state.blindTarget), NamedTextColor.WHITE)).appendNewline()
+                .append(Component.text(Lang.t("board.round.counts", state.handsLeft, state.discardsLeft, state.money,
+                        selected.size()), NamedTextColor.YELLOW));
         // Boss 回合：在状态栏追加 Boss 效果描述，让玩家随时看到当前 Boss 的干扰效果
         if (state.blindType == Data.BlindType.BOSS && !state.bossQueue.isEmpty()) {
-            sb.appendNewline().append(Component.text("Boss：" + Data.Boss.byKey(state.bossQueue.get(0)).desc, NamedTextColor.LIGHT_PURPLE));
+            sb.appendNewline().append(Component.text("Boss：" + Data.Boss.byKey(state.bossQueue.get(0)).desc(), NamedTextColor.LIGHT_PURPLE));
         }
-        sb.appendNewline().append(Component.text("右键=使用/选中  Shift+右键=查看简介", NamedTextColor.DARK_GRAY));
+        sb.appendNewline().append(Component.text(Lang.t("board.round.hint"), NamedTextColor.DARK_GRAY));
         statusBar.text(sb.build());
         statusBar.teleport(at(0, STATUS_Y));
 
@@ -438,11 +439,11 @@ public final class RoundBoard {
 
         // 按钮
         int selN = selected.size();
-        playBtn.text(Component.text("▶ 出牌" + (selN > 0 ? " (" + selN + ")" : ""), NamedTextColor.GREEN));
+        playBtn.text(Component.text(Lang.t("board.btn.play", selN > 0 ? " (" + selN + ")" : ""), NamedTextColor.GREEN));
         ensureTag(playBtn, "balatro_act_play");
         playBtn.teleport(at(-1.15, BUTTON_Y));
         placeInteraction(-1.15, BUTTON_Y, BTN_HW, BTN_HH, "play");
-        discBtn.text(Component.text("✗ 弃牌" + (selN > 0 ? " (" + selN + ")" : ""), NamedTextColor.RED));
+        discBtn.text(Component.text(Lang.t("board.btn.discard", selN > 0 ? " (" + selN + ")" : ""), NamedTextColor.RED));
         ensureTag(discBtn, "balatro_act_discard");
         discBtn.teleport(at(1.15, BUTTON_Y));
         placeInteraction(1.15, BUTTON_Y, BTN_HW, BTN_HH, "discard");
@@ -458,22 +459,22 @@ public final class RoundBoard {
     /** 当前选中牌的牌型 + 基础筹码×倍率（不计小丑），无选中则给提示。 */
     private Component evalText(RunState state) {
         if (selected.isEmpty()) {
-            return Component.text("右键手牌选中  ·  再右键「出牌/弃牌」", NamedTextColor.GRAY);
+            return Component.text(Lang.t("board.hint.select"), NamedTextColor.GRAY);
         }
         List<Card> cards = new ArrayList<>();
         for (Card c : state.hand) if (selected.contains(c.id())) cards.add(c);
         HandEval.Result res = Engine.evaluateHand(state, cards);
         if (res == null || res.type == null) {
-            return Component.text("（无效牌组）", NamedTextColor.GRAY);
+            return Component.text(Lang.t("board.hand.invalid"), NamedTextColor.GRAY);
         }
         int lvl = state.handLevels.getOrDefault(res.type, 1);
         long chips = res.type.chipsAtLevel(lvl);
         long mult = res.type.multAtLevel(lvl);
         return Component.text()
-                .append(Component.text(res.type.name + "  ", NamedTextColor.AQUA))
-                .append(Component.text(chips + " 筹码", NamedTextColor.WHITE))
+                .append(Component.text(res.type.displayName() + "  ", NamedTextColor.AQUA))
+                .append(Component.text(Lang.t("board.hand.chips", chips), NamedTextColor.WHITE))
                 .append(Component.text("  ×  ", NamedTextColor.GRAY))
-                .append(Component.text(mult + " 倍", NamedTextColor.WHITE))
+                .append(Component.text(Lang.t("board.hand.mult", mult), NamedTextColor.WHITE))
                 .append(Component.text("  (Lv" + lvl + ")", NamedTextColor.DARK_GRAY))
                 .build();
     }
@@ -485,13 +486,16 @@ public final class RoundBoard {
     private Component cardFace(Card card, boolean selected) {
         int cols = CARD_TEXT_COLS;
         if (card.facedown()) {
-            return padCenter(Component.text("？", NamedTextColor.WHITE), 2, cols).appendNewline()
+            String fdText = Lang.t("card.hidden");
+            return padCenter(Component.text(fdText, NamedTextColor.WHITE), displayWidth(fdText), cols).appendNewline()
                     .append(padCenter(Component.text(" ", NamedTextColor.WHITE), 1, cols)).appendNewline()
                     .append(padCenter(Component.text(" ", NamedTextColor.WHITE), 1, cols));
         }
         if (card.isStone()) {
-            return padCenter(Component.text("石", NamedTextColor.GRAY), 2, cols).appendNewline()
-                    .append(padCenter(Component.text("头", NamedTextColor.GRAY), 2, cols)).appendNewline()
+            String st1 = Lang.t("board.card.stone1");
+            String st2 = Lang.t("board.card.stone2");
+            return padCenter(Component.text(st1, NamedTextColor.GRAY), displayWidth(st1), cols).appendNewline()
+                    .append(padCenter(Component.text(st2, NamedTextColor.GRAY), displayWidth(st2), cols)).appendNewline()
                     .append(padCenter(Component.text(" ", NamedTextColor.GRAY), 1, cols));
         }
         Data.Suit s = Data.Suit.byIndex(card.suit());
@@ -507,7 +511,7 @@ public final class RoundBoard {
         String l3text;
         TextColor l3col;
         if (card.debuff()) {
-            l3text = "失效";
+            l3text = Lang.t("board.card.debuff_short");
             l3col = NamedTextColor.DARK_GRAY;
         } else if (card.enh() != null) {
             l3text = shortEnh(card.enh());
@@ -565,26 +569,26 @@ public final class RoundBoard {
         Data.BlindType bt = Data.BlindType.byKey(state.nextBlind);
         long target = Engine.blindTarget(state, bt);
         String boss = bt == Data.BlindType.BOSS && !state.bossQueue.isEmpty()
-                ? "（" + Data.Boss.byKey(state.bossQueue.get(0)).name + "）" : "";
+                ? "（" + Data.Boss.byKey(state.bossQueue.get(0)).displayName() + "）" : "";
         var sb = Component.text()
-                .append(Component.text("底注 " + state.ante + "  " + blindName(bt.key) + boss, NamedTextColor.GOLD)).appendNewline()
-                .append(Component.text("目标 " + target + " 分", NamedTextColor.WHITE)).appendNewline()
-                .append(Component.text("$" + state.money + "  右键▶开始 · 右键✗跳过(获标签)", NamedTextColor.YELLOW));
+                .append(Component.text(Lang.t("board.blind.ante", state.ante, blindName(bt.key), boss), NamedTextColor.GOLD)).appendNewline()
+                .append(Component.text(Lang.t("board.blind.target", target), NamedTextColor.WHITE)).appendNewline()
+                .append(Component.text(Lang.t("board.blind.money", state.money), NamedTextColor.YELLOW));
         // 盲注选择阶段遇 Boss：显示 Boss 效果描述，便于玩家决定开始还是跳过
         if (bt == Data.BlindType.BOSS && !state.bossQueue.isEmpty()) {
-            sb.appendNewline().append(Component.text("Boss：" + Data.Boss.byKey(state.bossQueue.get(0)).desc, NamedTextColor.LIGHT_PURPLE));
+            sb.appendNewline().append(Component.text("Boss：" + Data.Boss.byKey(state.bossQueue.get(0)).desc(), NamedTextColor.LIGHT_PURPLE));
         }
         statusBar.text(sb.build());
         statusBar.teleport(at(0, STATUS_Y));
         hide(evalBar);
 
-        playBtn.text(Component.text("▶ 开始盲注", NamedTextColor.GREEN));
+        playBtn.text(Component.text(Lang.t("board.btn.start_blind"), NamedTextColor.GREEN));
         ensureTag(playBtn, "balatro_act_play");
         playBtn.teleport(at(-1.15, BUTTON_Y));
         placeInteraction(-1.15, BUTTON_Y, BTN_HW, BTN_HH, "go");
 
         boolean canSkip = bt != Data.BlindType.BOSS;
-        discBtn.text(Component.text(canSkip ? "✗ 跳过(标签)" : "✗ Boss 不可跳过",
+        discBtn.text(Component.text(Lang.t(canSkip ? "board.btn.skip_tag" : "board.btn.boss_no_skip"),
                 canSkip ? NamedTextColor.RED : NamedTextColor.DARK_GRAY));
         ensureTag(discBtn, "balatro_act_discard");
         discBtn.teleport(at(1.15, BUTTON_Y));
@@ -603,8 +607,8 @@ public final class RoundBoard {
     private void reflowShop(RunState state) {
         var shop = state.shop;
         statusBar.text(Component.text()
-                .append(Component.text("商店  $" + state.money, NamedTextColor.GOLD)).appendNewline()
-                .append(Component.text("右键卡片购买  ·  右键持有小丑/消耗品出售  ·  重掷  ·  下一回合", NamedTextColor.GRAY))
+                .append(Component.text(Lang.t("board.shop.title", state.money), NamedTextColor.GOLD)).appendNewline()
+                .append(Component.text(Lang.t("board.shop.hint"), NamedTextColor.GRAY))
                 .build());
         statusBar.teleport(at(0, STATUS_Y));
         hide(evalBar);
@@ -648,7 +652,7 @@ public final class RoundBoard {
             TextDisplay d = slot(shopSlots, i, BG_NORMAL);
             TextColor col = c.sold ? NamedTextColor.DARK_GRAY
                     : (c.kind.equals("joker") ? TextColor.color(255, 220, 120) : NamedTextColor.WHITE);
-            d.text(Component.text((c.sold ? "[售] " : "") + shopCardLabel(c) + " $" + c.price, col));
+            d.text(Component.text((c.sold ? Lang.t("board.tag.sold") : "") + shopCardLabel(c) + " $" + c.price, col));
             d.setBackgroundColor(c.sold ? BG_SOLD : BG_NORMAL);
             setIndexedTag(d, "balatro_shopcard_", i);
             d.teleport(at(x, 1.2));
@@ -661,7 +665,7 @@ public final class RoundBoard {
             var p = shop.packs.get(i);
             double x = (i - (pn - 1) / 2.0) * 1.6;
             TextDisplay d = slot(packSlots, i, BG_NORMAL);
-            d.text(Component.text((p.sold ? "[售] " : "") + "📦" + p.name + " $" + p.price, NamedTextColor.AQUA));
+            d.text(Component.text((p.sold ? Lang.t("board.tag.sold") : "") + "📦" + p.name + " $" + p.price, NamedTextColor.AQUA));
             d.setBackgroundColor(p.sold ? BG_SOLD : BG_NORMAL);
             setIndexedTag(d, "balatro_shoppack_", i);
             d.teleport(at(x, 0.1));
@@ -692,18 +696,18 @@ public final class RoundBoard {
             double x = vn == 1 ? 0 : (i - (vn - 1) / 2.0) * (VOUCHER_HW * 2 + 0.1);
             TextDisplay d = slot(voucherSlots, i, BG_NORMAL);
             d.text(Component.text("🎫" + vch.name + " $" + vch.price
-                    + (vch.sold ? "(已售)" : ""), NamedTextColor.LIGHT_PURPLE));
+                    + (vch.sold ? Lang.t("board.tag.sold_short") : ""), NamedTextColor.LIGHT_PURPLE));
             d.setBackgroundColor(vch.sold ? BG_SOLD : BG_NORMAL);
             setIndexedTag(d, "balatro_shopvoucher_", i);
             d.teleport(at(x, -1.35));
             if (!vch.sold) placeInteraction(x, -1.35, VOUCHER_HW, VOUCHER_HH, "voucher:" + i);
         }
         for (int i = vn; i < voucherSlots.size(); i++) hide(voucherSlots.get(i));
-        rerollBtn.text(Component.text("🔄 重掷", NamedTextColor.YELLOW));
+        rerollBtn.text(Component.text(Lang.t("board.btn.reroll"), NamedTextColor.YELLOW));
         ensureTag(rerollBtn, "balatro_reroll");
         rerollBtn.teleport(at(-1.5, -2.05));
         placeInteraction(-1.5, -2.05, BTN_HW, BTN_HH, "reroll");
-        nextBtn.text(Component.text("▶ 下一回合", NamedTextColor.GREEN));
+        nextBtn.text(Component.text(Lang.t("board.btn.next_round"), NamedTextColor.GREEN));
         ensureTag(nextBtn, "balatro_next");
         nextBtn.teleport(at(1.5, -2.05));
         placeInteraction(1.5, -2.05, BTN_HW, BTN_HH, "next");
@@ -717,9 +721,9 @@ public final class RoundBoard {
     private void reflowPack(RunState state) {
         var pack = state.pack;
         statusBar.text(Component.text()
-                .append(Component.text("补充包：" + (pack == null ? "?" : pack.def.name)
-                        + "（选 " + (pack == null ? 0 : pack.left) + " 张）", NamedTextColor.GOLD)).appendNewline()
-                .append(Component.text("右键选择  ·  跳过", NamedTextColor.GRAY))
+                .append(Component.text(Lang.t("board.pack.title", pack == null ? "?" : pack.def.displayName(),
+                        pack == null ? 0 : pack.left), NamedTextColor.GOLD)).appendNewline()
+                .append(Component.text(Lang.t("board.pack.hint"), NamedTextColor.GRAY))
                 .build());
         statusBar.teleport(at(0, STATUS_Y));
         hide(evalBar);
@@ -734,7 +738,7 @@ public final class RoundBoard {
             var c = pack.cards.get(i);
             double x = (i - (n - 1) / 2.0) * 1.15;
             TextDisplay d = slot(packSlots, i, BG_NORMAL);
-            d.text(Component.text((c.taken ? "[选] " : "") + packCardLabel(c),
+            d.text(Component.text((c.taken ? Lang.t("board.tag.taken") : "") + packCardLabel(c),
                     c.taken ? NamedTextColor.DARK_GRAY : NamedTextColor.WHITE));
             d.setBackgroundColor(c.taken ? BG_SOLD : BG_NORMAL);
             setIndexedTag(d, "balatro_pick_", i);
@@ -743,7 +747,7 @@ public final class RoundBoard {
         }
         for (int i = n; i < packSlots.size(); i++) hide(packSlots.get(i));
 
-        skipackBtn.text(Component.text("✗ 跳过", NamedTextColor.RED));
+        skipackBtn.text(Component.text(Lang.t("board.btn.skip"), NamedTextColor.RED));
         ensureTag(skipackBtn, "balatro_skipack");
         skipackBtn.teleport(at(0, -0.8));
         placeInteraction(0, -0.8, BTN_HW, BTN_HH, "skipack");
@@ -766,19 +770,19 @@ public final class RoundBoard {
         var shop = state.shop;
         if (shop == null) return;
         Player p = session.player();
-        p.sendMessage(Component.text("━━ 商店（持有 $" + state.money + "）━━", NamedTextColor.GOLD));
+        p.sendMessage(Component.text(Lang.t("board.shop.header", state.money), NamedTextColor.GOLD));
         for (int i = 0; i < shop.cards.size(); i++) {
             var c = shop.cards.get(i);
             p.sendMessage(infoLine((i + 1) + ". ", kindLabel(c.kind), c.name, c.price, c.sold, c.desc));
         }
         for (var pk : shop.packs) {
-            p.sendMessage(infoLine("📦 ", "补充包", pk.name, pk.price, pk.sold, pk.desc));
+            p.sendMessage(infoLine("📦 ", Lang.t("kind.pack"), pk.name, pk.price, pk.sold, pk.desc));
         }
         for (int vi = 0; vi < shop.vouchers.size(); vi++) {
             var vch = shop.vouchers.get(vi);
-            p.sendMessage(infoLine("🎫[" + (vi + 1) + "] ", "优惠券", vch.name, vch.price, vch.sold, vch.desc));
+            p.sendMessage(infoLine("🎫[" + (vi + 1) + "] ", Lang.t("kind.voucher"), vch.name, vch.price, vch.sold, vch.desc));
         }
-        p.sendMessage(Component.text("直接右键=购买 · 右键持有小丑/消耗品=出售 · Shift+右键=查看简介 · 重掷/下一回合", NamedTextColor.GRAY));
+        p.sendMessage(Component.text(Lang.t("board.shop.info_hint"), NamedTextColor.GRAY));
     }
 
     /** 进入补充包：把所有卡简介发到玩家聊天框。 */
@@ -786,27 +790,23 @@ public final class RoundBoard {
         var pack = state.pack;
         if (pack == null) return;
         Player p = session.player();
-        p.sendMessage(Component.text("━━ 补充包：" + pack.def.name + "（还可选 " + pack.left + " 张）━━", NamedTextColor.GOLD));
+        p.sendMessage(Component.text(Lang.t("board.pack.header", pack.def.displayName(), pack.left), NamedTextColor.GOLD));
         for (int i = 0; i < pack.cards.size(); i++) {
             var c = pack.cards.get(i);
             p.sendMessage(infoLine((i + 1) + ". ", kindLabel(c.kind), c.name, 0, c.taken, c.desc));
         }
-        p.sendMessage(Component.text("直接右键=选择 · Shift+右键=查看该卡简介 · 跳过", NamedTextColor.GRAY));
+        p.sendMessage(Component.text(Lang.t("board.pack.info_hint"), NamedTextColor.GRAY));
     }
 
     private static Component infoLine(String prefix, String tag, String name, long price, boolean gone, String desc) {
-        return Component.text(prefix + "[" + tag + "] " + name + (price > 0 ? "  $" + price : "") + (gone ? "  (已售/选)" : ""),
+        return Component.text(prefix + "[" + tag + "] " + name + (price > 0 ? "  $" + price : "") + (gone ? Lang.t("board.tag.gone") : ""),
                         NamedTextColor.YELLOW)
                 .appendNewline().append(Component.text(desc == null ? "" : desc, NamedTextColor.GRAY));
     }
 
     private static String kindLabel(String kind) {
         return switch (kind) {
-            case "joker" -> "小丑";
-            case "tarot" -> "塔罗";
-            case "planet" -> "星球";
-            case "spectral" -> "幻灵";
-            case "playing" -> "游戏牌";
+            case "joker", "tarot", "planet", "spectral", "playing" -> Lang.t("kind." + kind);
             default -> kind;
         };
     }
@@ -823,7 +823,8 @@ public final class RoundBoard {
                 int i = Integer.parseInt(action.substring("joker:".length()));
                 if (i >= 0 && i < state.jokers.size()) {
                     JokerInstance j = state.jokers.get(i);
-                    return Component.text("🃏 " + j.def.displayName() + (j.debuff ? "（失效）" : ""), NamedTextColor.GOLD)
+                    return Component.text("🃏 " + Lang.t("board.joker.line", j.def.displayName(),
+                            j.debuff ? Lang.t("board.joker.debuffed") : ""), NamedTextColor.GOLD)
                             .appendNewline().append(Component.text(j.def.desc(), NamedTextColor.GRAY));
                 }
             } else if (action.startsWith("cons:")) {
@@ -835,7 +836,7 @@ public final class RoundBoard {
                     String req = targetReqText(Consumables.effectiveUseInfo(state, c.key));
                     if (req != null) {
                         info = info.appendNewline().append(Component.text(
-                                req + "（右键手牌选中后再使用）", NamedTextColor.YELLOW));
+                                Lang.t("req.hint", req), NamedTextColor.YELLOW));
                     }
                     return info;
                 }
@@ -849,13 +850,13 @@ public final class RoundBoard {
                 int i = Integer.parseInt(action.substring("shoppack:".length()));
                 if (i >= 0 && i < state.shop.packs.size()) {
                     var pk = state.shop.packs.get(i);
-                    return infoLine("📦 ", "补充包", pk.name, pk.price, pk.sold, pk.desc);
+                    return infoLine("📦 ", Lang.t("kind.pack"), pk.name, pk.price, pk.sold, pk.desc);
                 }
             } else if (action.startsWith("voucher:") && state.shop != null) {
                 int i = Integer.parseInt(action.substring("voucher:".length()));
                 if (i >= 0 && i < state.shop.vouchers.size()) {
                     var v = state.shop.vouchers.get(i);
-                    return infoLine("🎫[" + (i + 1) + "] ", "优惠券", v.name, v.price, v.sold, v.desc);
+                    return infoLine("🎫[" + (i + 1) + "] ", Lang.t("kind.voucher"), v.name, v.price, v.sold, v.desc);
                 }
             } else if (action.startsWith("pick:") && state.pack != null) {
                 int i = Integer.parseInt(action.substring("pick:".length()));
@@ -874,23 +875,23 @@ public final class RoundBoard {
         // 面朝下牌身份保密（R238 修复）：mark Boss/xray 的隐藏机制不得被简介通道击穿——
         // 板面已渲染「？」，简介与 status 同样只给「面朝下」，增强/版本/蜡封一并隐藏。
         if (c.facedown()) {
-            return Component.text("面朝下的牌（内容未知）", NamedTextColor.GRAY);
+            return Component.text(Lang.t("board.card.facedown"), NamedTextColor.GRAY);
         }
         Component head = c.isStone()
-                ? Component.text("石头牌", NamedTextColor.GRAY)
-                : Component.text(Data.Suit.byIndex(c.suit()).name + " " + Data.rankName(c.rank()), NamedTextColor.WHITE);
+                ? Component.text(Lang.t("card.stone_card"), NamedTextColor.GRAY)
+                : Component.text(Data.Suit.byIndex(c.suit()).displayName() + " " + Data.rankName(c.rank()), NamedTextColor.WHITE);
         Component body = Component.empty();
         if (c.enh() != null) {
-            body = body.appendNewline().append(Component.text(c.enh().name + "：" + c.enh().desc, NamedTextColor.YELLOW));
+            body = body.appendNewline().append(Component.text(c.enh().displayName() + "：" + c.enh().desc(), NamedTextColor.YELLOW));
         }
         if (c.edition() != null) {
-            body = body.appendNewline().append(Component.text(c.edition().name + "：" + c.edition().desc, TextColor.color(220, 180, 255)));
+            body = body.appendNewline().append(Component.text(c.edition().displayName() + "：" + c.edition().desc(), TextColor.color(220, 180, 255)));
         }
         if (c.seal() != null) {
-            body = body.appendNewline().append(Component.text(c.seal().name + "：" + c.seal().desc, TextColor.color(120, 200, 255)));
+            body = body.appendNewline().append(Component.text(c.seal().displayName() + "：" + c.seal().desc(), TextColor.color(120, 200, 255)));
         }
         if (c.debuff()) {
-            body = body.appendNewline().append(Component.text("（被失效）", NamedTextColor.DARK_RED));
+            body = body.appendNewline().append(Component.text(Lang.t("board.card.debuffed"), NamedTextColor.DARK_RED));
         }
         return head.append(body);
     }
@@ -898,16 +899,7 @@ public final class RoundBoard {
     // ================= 角标 / 标签 =================
 
     private static String shortEnh(Data.Enhancement e) {
-        return switch (e) {
-            case BONUS -> "+筹";
-            case MULT -> "+倍";
-            case WILD -> "万能";
-            case GLASS -> "玻璃";
-            case STEEL -> "钢铁";
-            case STONE -> "石头";
-            case GOLD -> "黄金";
-            case LUCKY -> "幸运";
-        };
+        return Lang.t("board.enh." + e.key);
     }
 
     private static String editionSym(Data.Edition e) {
@@ -932,34 +924,30 @@ public final class RoundBoard {
 
     private static String shopCardLabel(cn.quotidietium.balatro.engine.shop.Shop.CardItem c) {
         return switch (c.kind) {
-            case "joker" -> "小丑 " + c.name;
-            case "playing" -> "游戏牌 " + c.name;
+            case "joker", "playing" -> Lang.t("kind." + c.kind) + " " + c.name;
             default -> c.kind + " " + c.name;
         };
     }
 
     private static String packCardLabel(cn.quotidietium.balatro.engine.shop.Packs.PackCard c) {
         return switch (c.kind) {
-            case "joker" -> "小丑 " + c.name;
-            case "playing" -> "游戏牌 " + c.name;
+            case "joker", "playing" -> Lang.t("kind." + c.kind) + " " + c.name;
             default -> c.kind + " " + c.name;
         };
     }
 
     private static String consLabel(Consumable c) {
         return switch (c.kind) {
-            case "tarot" -> "塔罗 " + Data.Tarot.byKey(c.key).name;
-            case "planet" -> "星球 " + Data.Planet.byKey(c.key).name;
-            case "spectral" -> "幻灵 " + Data.Spectral.byKey(c.key).name;
+            case "tarot" -> Lang.t("kind.tarot") + " " + Data.Tarot.byKey(c.key).displayName();
+            case "planet" -> Lang.t("kind.planet") + " " + Data.Planet.byKey(c.key).displayName();
+            case "spectral" -> Lang.t("kind.spectral") + " " + Data.Spectral.byKey(c.key).displayName();
             default -> c.kind + " " + c.key;
         };
     }
 
     private static String blindName(String key) {
         return switch (key) {
-            case "small" -> "小盲注";
-            case "big" -> "大盲注";
-            case "boss" -> "Boss 盲注";
+            case "small", "big", "boss" -> Lang.t("blind." + key);
             default -> key;
         };
     }
@@ -1005,8 +993,7 @@ public final class RoundBoard {
         if (findInHand(session.state(), cardId) == null) return false;
         if (selected.size() >= MAX_SELECT) {
             session.player().sendMessage(Component.text(
-                    "选牌上限为 " + MAX_SELECT + " 张（出牌/弃牌最多 5 张），请先取消部分牌再选。",
-                    NamedTextColor.RED));
+                    Lang.t("err.select_limit", MAX_SELECT), NamedTextColor.RED));
             return false;
         }
         selected.add(cardId);
@@ -1065,17 +1052,18 @@ public final class RoundBoard {
         if (i < 0 || i >= st.jokers.size()) return;
         JokerInstance j = st.jokers.get(i);
         if (j.eternal) {
-            player.sendMessage(Component.text(j.def.displayName() + " 是永恒小丑，不可出售。", NamedTextColor.RED));
+            player.sendMessage(Component.text(Lang.t("confirm.eternal", j.def.displayName()), NamedTextColor.RED));
             return;
         }
         int val = st.sellValue(j);
-        player.sendMessage(Component.text("━━ 确认出售 ━━", NamedTextColor.GOLD));
-        player.sendMessage(Component.text("🃏 " + j.def.displayName() + (j.debuff ? "（失效中）" : ""), NamedTextColor.YELLOW));
+        player.sendMessage(Component.text(Lang.t("confirm.sell.title"), NamedTextColor.GOLD));
+        player.sendMessage(Component.text("🃏 " + Lang.t("confirm.joker_line", j.def.displayName(),
+                j.debuff ? Lang.t("confirm.joker_debuffed") : ""), NamedTextColor.YELLOW));
         player.sendMessage(Component.text(j.def.desc(), NamedTextColor.GRAY));
-        player.sendMessage(Component.text("售价：$" + val, NamedTextColor.GREEN));
+        player.sendMessage(Component.text(Lang.t("confirm.price", val), NamedTextColor.GREEN));
         // 按钮携带期望 joker key：确认后到点击前牌序可能被改写（幻灵/命令出售等），
         // 命令层校验不一致则取消执行，防止序号错位卖错小丑
-        player.sendMessage(confirmButtons("/balatro sellj " + (i + 1) + " " + j.def.key(), "出售", "$" + val));
+        player.sendMessage(confirmButtons("/balatro sellj " + (i + 1) + " " + j.def.key(), Lang.t("act.sell"), "$" + val));
     }
 
     /**
@@ -1096,14 +1084,14 @@ public final class RoundBoard {
         Consumables.UseInfo info = Consumables.effectiveUseInfo(st, c.key);
         String req = targetReqText(info);
         String cmd = "/balatro use " + (i + 1) + " " + c.kind + ":" + c.key;
-        player.sendMessage(Component.text("━━ 确认使用 ━━", NamedTextColor.GOLD));
+        player.sendMessage(Component.text(Lang.t("confirm.use.title"), NamedTextColor.GOLD));
         player.sendMessage(Component.text("[" + kindLabel(c.kind) + "] " + c.name(), NamedTextColor.AQUA));
         player.sendMessage(Component.text(c.desc(), NamedTextColor.GRAY));
         if (req != null && st.phase == Phase.ROUND) {
             List<Integer> sel = selectedIdsInHandOrder();
             boolean fit = sel.size() >= info.minTargets() && sel.size() <= info.maxTargets();
             player.sendMessage(Component.text(
-                    req + "（当前已选 " + sel.size() + " 张" + (fit ? "，将作用于已选牌）" : "）"),
+                    Lang.t(fit ? "req.selected_fit" : "req.selected_nofit", req, sel.size()),
                     fit ? NamedTextColor.GREEN : NamedTextColor.YELLOW));
             if (fit) {
                 StringBuilder sb = new StringBuilder(cmd).append(" @");
@@ -1114,13 +1102,12 @@ public final class RoundBoard {
                 cmd = sb.toString();
             }
         } else if (req != null) {
-            player.sendMessage(Component.text(req + "（仅出牌回合可用）", NamedTextColor.YELLOW));
+            player.sendMessage(Component.text(Lang.t("req.round_only", req), NamedTextColor.YELLOW));
         }
         player.sendMessage(Component.text(
-                "手动命令：/balatro use " + (i + 1) + " <手牌序号...>；出售：/balatro sellc " + (i + 1)
-                        + "（$" + sellVal + "）", NamedTextColor.DARK_GRAY));
+                Lang.t("confirm.manual_cmd", i + 1, sellVal), NamedTextColor.DARK_GRAY));
         // 按钮携带期望 kind:key + 目标快照 @id（命令层双重校验：列表/手牌变化均取消防错位）
-        player.sendMessage(confirmButtons(cmd, "使用", null));
+        player.sendMessage(confirmButtons(cmd, Lang.t("act.use"), null));
     }
 
     /**
@@ -1140,22 +1127,22 @@ public final class RoundBoard {
         Consumable c = st.consumables.get(i);
         int val = RunState.sellValue(c);
         String sellCmd = "/balatro sellc " + (i + 1) + " " + c.kind + ":" + c.key;
-        player.sendMessage(Component.text("━━ 确认出售 ━━", NamedTextColor.GOLD));
+        player.sendMessage(Component.text(Lang.t("confirm.sell.title"), NamedTextColor.GOLD));
         player.sendMessage(Component.text("[" + kindLabel(c.kind) + "] " + c.name(), NamedTextColor.AQUA));
         player.sendMessage(Component.text(c.desc(), NamedTextColor.GRAY));
-        player.sendMessage(Component.text("售价：$" + val, NamedTextColor.GREEN));
+        player.sendMessage(Component.text(Lang.t("confirm.price", val), NamedTextColor.GREEN));
         Consumables.UseInfo info = Consumables.effectiveUseInfo(st, c.key);
         Component buttons;
         if (!info.needsTargets() && !info.roundOnly()) {
-            Component use = Component.text("[确认使用]", NamedTextColor.GREEN)
+            Component use = Component.text(Lang.t("confirm.use_now"), NamedTextColor.GREEN)
                     .clickEvent(ClickEvent.runCommand("/balatro use " + (i + 1) + " " + c.kind + ":" + c.key))
-                    .hoverEvent(HoverEvent.showText(Component.text("点击确认使用（商店内可用）", NamedTextColor.GRAY)));
+                    .hoverEvent(HoverEvent.showText(Component.text(Lang.t("confirm.use_now_hover"), NamedTextColor.GRAY)));
             // 按钮携带期望 kind:key：确认后到点击前消耗品列表可能已变化（使用/出售收缩列表），
             // 命令层校验不一致则取消执行，防止序号错位卖错/用错消耗品
             buttons = Component.text(" ").append(use).append(Component.text("   "))
-                    .append(confirmButtons(sellCmd, "出售", "$" + val));
+                    .append(confirmButtons(sellCmd, Lang.t("act.sell"), "$" + val));
         } else {
-            buttons = confirmButtons(sellCmd, "出售", "$" + val);
+            buttons = confirmButtons(sellCmd, Lang.t("act.sell"), "$" + val);
         }
         player.sendMessage(buttons);
     }
@@ -1164,19 +1151,21 @@ public final class RoundBoard {
     private static String targetReqText(Consumables.UseInfo info) {
         if (!info.needsTargets()) return null;
         return info.minTargets() == info.maxTargets()
-                ? "需选中 " + info.maxTargets() + " 张手牌"
-                : "需选中 " + info.minTargets() + "–" + info.maxTargets() + " 张手牌";
+                ? Lang.t("req.exact", info.maxTargets())
+                : Lang.t("req.range", info.minTargets(), info.maxTargets());
     }
 
     /** 生成「[确认X] [取消]」两个可点击按钮。 */
     private static Component confirmButtons(String confirmCmd, String action, String gain) {
-        String confirmHover = "点击确认" + action + (gain != null ? "（" + gain + "）" : "");
-        Component confirm = Component.text("[确认" + action + "]", NamedTextColor.GREEN)
+        String confirmHover = gain != null
+                ? Lang.t("btn.confirm_hover_gain", action, gain)
+                : Lang.t("btn.confirm_hover", action);
+        Component confirm = Component.text(Lang.t("btn.confirm", action), NamedTextColor.GREEN)
                 .clickEvent(ClickEvent.runCommand(confirmCmd))
                 .hoverEvent(HoverEvent.showText(Component.text(confirmHover, NamedTextColor.GRAY)));
-        Component cancel = Component.text("[取消]", NamedTextColor.RED)
+        Component cancel = Component.text(Lang.t("btn.cancel"), NamedTextColor.RED)
                 .clickEvent(ClickEvent.runCommand("/balatro cancel"))
-                .hoverEvent(HoverEvent.showText(Component.text("点击取消", NamedTextColor.GRAY)));
+                .hoverEvent(HoverEvent.showText(Component.text(Lang.t("btn.cancel_hover"), NamedTextColor.GRAY)));
         return Component.text(" ").append(confirm).append(Component.text("   ")).append(cancel);
     }
 

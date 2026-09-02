@@ -1,6 +1,9 @@
 package cn.quotidietium.balatro.engine;
 
 import cn.quotidietium.balatro.engine.consumable.Consumables;
+import cn.quotidietium.balatro.i18n.Lang;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,6 +19,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 不作用于目标类消耗品；铃牌本身也是合法的消耗品目标。
  */
 class BossBellConsumableTargetTest {
+
+
+    /** 本类断言的是原版中文文案，故固定跑在 zh_CN 下（同时兼作 zh_CN 覆盖度检查）。 */
+    @BeforeAll
+    static void useChinese() {
+        Lang.load("zh_CN", null);
+    }
+
+    @AfterAll
+    static void restoreDefaultLocale() {
+        Lang.reset();
+    }
 
     private RunState bellRound() {
         RunState s = Engine.createRun("red", 0, "ANYSEED1", null);

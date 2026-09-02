@@ -1,6 +1,7 @@
 package cn.quotidietium.balatro.session;
 
 import cn.quotidietium.balatro.BalatroPlugin;
+import cn.quotidietium.balatro.i18n.Lang;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,7 +31,7 @@ public final class SessionManager {
         if (sessions.containsKey(id)) return null;
         // 兜底校验（命令层已先行校验并提示）：种子来自客户端，不接受超长/非法字符集
         if (seed != null && !cn.quotidietium.balatro.engine.Rng.isValidSeed(seed)) {
-            plugin.getLogger().warning("拒绝非法种子输入（玩家 " + player.getName() + "）");
+            plugin.getLogger().warning(Lang.t("log.bad_seed", player.getName()));
             return null;
         }
         GameSession session = new GameSession(plugin, player, deckKey, stakeIdx, seed, challenge);
@@ -39,7 +40,7 @@ public final class SessionManager {
             started = session.start();
         } catch (RuntimeException ex) {
             // 开局流程异常（如牌桌实体生成失败）：会话不入表，记日志后按开局失败处理
-            plugin.getLogger().warning("开局失败（玩家 " + player.getName() + "）：" + ex);
+            plugin.getLogger().warning(Lang.t("log.start_failed", player.getName(), ex));
             return null;
         }
         if (!started) {
@@ -49,7 +50,7 @@ public final class SessionManager {
         // putIfAbsent 防重入：fireRunStart 的事件监听器可能已为本玩家开过新局
         // （递归 start），直接 put 会覆盖并丢失新局的追踪（其牌桌实体泄漏）。
         if (sessions.putIfAbsent(id, session) != null) {
-            plugin.getLogger().warning("开局重入冲突（玩家 " + player.getName() + "），丢弃后开的局");
+            plugin.getLogger().warning(Lang.t("log.start_reentry", player.getName()));
             try {
                 session.despawnBoard();
             } catch (RuntimeException ignored) {
@@ -75,7 +76,7 @@ public final class SessionManager {
                 s.despawnBoard();
             } catch (RuntimeException ex) {
                 // 会话已移除；实体回收失败仅记日志（与 shutdownAll 同一兜底策略）
-                plugin.getLogger().warning("牌桌回收失败（玩家 " + player.getName() + "）：" + ex);
+                plugin.getLogger().warning(Lang.t("log.board_reclaim_failed", player.getName(), ex));
             }
         }
     }

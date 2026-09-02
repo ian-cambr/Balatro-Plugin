@@ -1,5 +1,6 @@
 package cn.quotidietium.balatro.engine;
 
+import cn.quotidietium.balatro.i18n.Lang;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -206,7 +207,7 @@ public final class Engine {
         gainTagOne(s, key);
         if (s.doubleTagPending && !key.equals("double")) {
             s.doubleTagPending = false;
-            s.msg("翻倍标签：复制了标签");
+            s.msg(Lang.t("msg.double_tag"));
             gainTagOne(s, key);
         }
     }
@@ -216,7 +217,7 @@ public final class Engine {
         for (Data.Tag t : Data.TAGS) if (t.key().equals(key)) { tag = t; break; }
         if (tag == null) return;
         s.tags.add(key);
-        s.msg("获得标签：" + tag.name());
+        s.msg(Lang.t("msg.tag_gained", tag.name()));
         Rng.Stream st = s.stream("tag");
         switch (key) {
             case "double" -> s.doubleTagPending = true;
@@ -265,7 +266,7 @@ public final class Engine {
             }
         }
         chooseBoss(s);
-        s.msg("Boss 盲注已重掷为：" + bossDef(s).name);
+        s.msg(Lang.t("msg.boss_rerolled", bossDef(s).displayName()));
     }
 
     /** 取指定类型的第一个补充包定义。 */
@@ -453,7 +454,7 @@ public final class Engine {
             if ("window".equals(bk)) s.bossSuitDebuff = 3;
             if ("plant".equals(bk)) s.bossFaceDebuff = true;
             if ("leaf".equals(bk)) s.bossLeaf = true;
-            if ("acorn".equals(bk)) { s.stream("acorn").shuffle(s.jokers); s.msg("琥珀橡子：小丑顺序被打乱"); }
+            if ("acorn".equals(bk)) { s.stream("acorn").shuffle(s.jokers); s.msg(Lang.t("msg.acorn")); }
         }
 
         // 洗牌并抽牌
@@ -502,7 +503,7 @@ public final class Engine {
         }
         // 整理手牌（bell/hook 等 stream.pick 已发生于此之前，安全）
         sortHand(s);
-        s.msg("回合开始：目标 " + s.blindTarget + " 分");
+        s.msg(Lang.t("msg.round_start", s.blindTarget));
     }
 
     private static Card drawOne(RunState s, boolean forceFacedown) {
@@ -599,16 +600,16 @@ public final class Engine {
     // ================= 出牌计分 =================
 
     public static PlayResult playHand(RunState s, List<Integer> cardIds) {
-        if (s.phase != Phase.ROUND) return PlayResult.err("当前不在回合中");
-        if (s.handsLeft <= 0) return PlayResult.err("没有剩余出牌次数");
-        if (cardIds == null || cardIds.size() < 1 || cardIds.size() > 5) return PlayResult.err("请选择 1-5 张牌");
+        if (s.phase != Phase.ROUND) return PlayResult.err(Lang.t("err.not_in_round"));
+        if (s.handsLeft <= 0) return PlayResult.err(Lang.t("err.no_hands_left"));
+        if (cardIds == null || cardIds.size() < 1 || cardIds.size() > 5) return PlayResult.err(Lang.t("err.select_1_to_5"));
         // P4 性能：≤5 个 id 的查重/包含改为 int 数组两两比较——原 HashSet 构造与
         // List<Integer>.contains 每次装箱（card id 超出 Integer 缓存区间，逐个分配）。
         int[] ids = new int[cardIds.size()];
         for (int i = 0; i < ids.length; i++) ids[i] = cardIds.get(i);
         for (int i = 0; i < ids.length; i++) {
             for (int j = i + 1; j < ids.length; j++) {
-                if (ids[i] == ids[j]) return PlayResult.err("不能重复选择同一张牌");
+                if (ids[i] == ids[j]) return PlayResult.err(Lang.t("err.duplicate_card"));
             }
         }
 
@@ -622,24 +623,24 @@ public final class Engine {
                 }
             }
         }
-        if (cards.size() != ids.length) return PlayResult.err("无效的手牌");
+        if (cards.size() != ids.length) return PlayResult.err(Lang.t("err.bad_hand_cards"));
 
         // Boss 出牌限制（psychic/bell；eye/mouth 需先判定牌型，见下）
         String bk = effectBk(s);
-        if ("psychic".equals(bk) && cards.size() != 5) return PlayResult.err("通灵者：必须出满 5 张牌");
-        if (s.mods.must5 && cards.size() != 5) return PlayResult.err("本局要求必须出满 5 张牌");
+        if ("psychic".equals(bk) && cards.size() != 5) return PlayResult.err(Lang.t("err.psychic"));
+        if (s.mods.must5 && cards.size() != 5) return PlayResult.err(Lang.t("err.must5"));
         if ("bell".equals(bk) && s.bellCardId != null && !containsId(ids, s.bellCardId)) {
-            return PlayResult.err("翠绿铃：必须包含被强制的牌");
+            return PlayResult.err(Lang.t("err.cerulean_bell"));
         }
 
         HandEval.Result evalRes = HandEval.evaluate(s, cards);
         Data.HandType type = evalRes.type;
 
         if ("eye".equals(bk) && s.playedTypesThisRound.contains(type)) {
-            return PlayResult.err("眼睛：本回合已经出过「" + type.name + "」");
+            return PlayResult.err(Lang.t("err.eye", type.displayName()));
         }
         if ("mouth".equals(bk) && !s.playedTypesThisRound.isEmpty() && s.playedTypesThisRound.get(0) != type) {
-            return PlayResult.err("嘴：本回合只能出「" + s.playedTypesThisRound.get(0).name + "」");
+            return PlayResult.err(Lang.t("err.mouth", s.playedTypesThisRound.get(0).displayName()));
         }
 
         s.bossTriggeredThisHand = false;
@@ -655,7 +656,7 @@ public final class Engine {
         if ("flint".equals(bk)) {
             chips = Math.max(1, Math.round(chips / 2.0));
             mult = Math.max(1, Math.round(mult / 2.0));
-            events.add("燧石：基础筹码与倍率减半");
+            events.add(Lang.t("ev.flint"));
             s.bossTriggeredThisHand = true;
         }
 
@@ -680,7 +681,7 @@ public final class Engine {
             if ("heart".equals(bk) && !activeJokers.isEmpty()) {
                 JokerInstance v = s.stream("heart").pick(activeJokers);
                 v.debuffHand = true;
-                events.add("绯红之心：" + v.def.displayName() + " 本次出牌失效");
+                events.add(Lang.t("ev.crimson_heart", v.def.displayName()));
                 s.bossTriggeredThisHand = true;
             }
 
@@ -694,14 +695,14 @@ public final class Engine {
                     if (pj.debuff || !s.jokers.contains(pj)) continue;
                     if (pj.def.key().equals("space") && s.stream("space").chance(0.25)) {
                         s.levelUpHand(type, 1);
-                        s.msg("太空小丑：「" + type.name + "」升 1 级（计分前）");
+                        s.msg(Lang.t("msg.space_joker", type.displayName()));
                     } else if (pj.def.key().equals("obelisk")) {
                         Data.HandType strict = strictMostPlayed(s);
                         if (strict == type) {
                             pj.extra.put("x", 0.0);
                             pj.extra.put("obNoGain", Boolean.TRUE); // R133：重置手不获增量（"consecutive
                             // ... without playing your most played"——该手不计入连续），onPlayHand 据此跳过
-                            s.msg("方尖碑：重置");
+                            s.msg(Lang.t("msg.obelisk_reset"));
                         }
                     }
                 }
@@ -742,7 +743,7 @@ public final class Engine {
                     double p = s.mods.glassDouble ? 0.5 : 0.25;
                     if (s.stream("glass").chance(p)) {
                         card.setBroken(true);
-                        events.add("玻璃牌破碎了");
+                        events.add(Lang.t("ev.glass_shattered"));
                         for (int ji = 0; ji < activeJokers.size(); ji++) {
                             JokerInstance j = activeJokers.get(ji);
                             j.def.onGlassBreak(s, j);
@@ -782,7 +783,7 @@ public final class Engine {
                     cn.quotidietium.balatro.engine.Consumable con = s.consumables.get(ci);
                     if ("planet".equals(con.kind)) {
                         Data.Planet p = Data.Planet.byKey(con.key);
-                        if (p.hand == type) { ctx.xMult(1.5); events.add("天文台：×1.5"); }
+                        if (p.hand == type) { ctx.xMult(1.5); events.add(Lang.t("ev.observatory")); }
                     }
                 }
             }
@@ -827,16 +828,16 @@ public final class Engine {
         // Boss：公牛（最常用牌型→金钱归零）/牙齿（每牌-$1）/手臂（牌型降级）
         if ("ox".equals(bk)) {
             Data.HandType most = s.mostPlayedType();
-            if (most == type) { s.money = 0; events.add("公牛：金钱归零！"); s.bossTriggeredThisHand = true; }
+            if (most == type) { s.money = 0; events.add(Lang.t("ev.bull_boss")); s.bossTriggeredThisHand = true; }
         }
         if ("tooth".equals(bk)) {
             s.money = Math.max(0, s.money - cards.size());
-            events.add("牙齿：-$" + cards.size());
+            events.add(Lang.t("ev.tooth", cards.size()));
             s.bossTriggeredThisHand = true;
         }
         if ("arm".equals(bk) && s.handLevel(type) > 1) {
             s.levelUpHand(type, -1);
-            events.add("手臂：「" + type.name + "」等级 -1");
+            events.add(Lang.t("ev.arm", type.displayName()));
             s.bossTriggeredThisHand = true;
         }
 
@@ -877,7 +878,7 @@ public final class Engine {
                 s.discardPile.add(v);
                 if (v.isSeal(Data.Seal.PURPLE) && !v.debuff()) {
                     Data.Tarot t40 = s.stream("consumable").pick(Data.TAROTS);
-                    if (s.addConsumableKey("tarot", t40.key)) s.msg("紫色蜡封：获得 " + t40.name);
+                    if (s.addConsumableKey("tarot", t40.key)) s.msg(Lang.t("msg.purple_seal", t40.displayName()));
                 }
                 // R130 真版：被动弃牌同样触发小丑 onDiscard（Green Wiki："whether by the
                 // player or game mechanics"；对齐 burnt 的首弃守卫/faceless/castle 等同口径）
@@ -895,7 +896,7 @@ public final class Engine {
                     s.releaseJokerBuffer();
                 }
             }
-            events.add("钩子：随机弃掉了 2 张牌");
+            events.add(Lang.t("ev.hook"));
             s.bossTriggeredThisHand = true;
         }
 
@@ -917,7 +918,7 @@ public final class Engine {
                 if (j.def.key().equals("bones") && !j.debuff) { bones = j; break; }
             }
             if (bones != null && s.roundScore >= Math.round(s.blindTarget * 0.25)) {
-                s.destroyJoker(bones, "骨头先生：免除失败！");
+                s.destroyJoker(bones, Lang.t("msg.mr_bones"));
                 endRound(s, true);
                 return PlayResult.ok(score, type, events, true, false);
             }
@@ -992,24 +993,24 @@ public final class Engine {
     // ================= 弃牌 =================
 
     public static PlayResult discard(RunState s, List<Integer> cardIds) {
-        if (s.phase != Phase.ROUND) return PlayResult.err("当前不在回合中");
-        if (s.discardsLeft <= 0) return PlayResult.err("没有剩余弃牌次数");
+        if (s.phase != Phase.ROUND) return PlayResult.err(Lang.t("err.not_in_round"));
+        if (s.discardsLeft <= 0) return PlayResult.err(Lang.t("err.no_discards_left"));
         // 金针（真版）：每次弃牌花费 $1（信用卡允许负余额，R123）
         if (s.mods.discardCost) {
             long credit = s.flags != null && s.flags.get("credit") instanceof Number
                     ? ((Number) s.flags.get("credit")).longValue() : 0;
             if (RunState.satAdd(s.money, credit) < 1) {
-                return PlayResult.err("弃牌需要 $1（资金不足）");
+                return PlayResult.err(Lang.t("err.discard_costs"));
             }
             s.money -= 1;
         }
-        if (cardIds == null || cardIds.size() < 1 || cardIds.size() > 5) return PlayResult.err("请选择 1-5 张牌");
+        if (cardIds == null || cardIds.size() < 1 || cardIds.size() > 5) return PlayResult.err(Lang.t("err.select_1_to_5"));
         // P4 性能：int 数组查重（同 playHand，去 HashSet 装箱）
         int[] ids = new int[cardIds.size()];
         for (int i = 0; i < ids.length; i++) ids[i] = cardIds.get(i);
         for (int i = 0; i < ids.length; i++) {
             for (int j = i + 1; j < ids.length; j++) {
-                if (ids[i] == ids[j]) return PlayResult.err("不能重复选择同一张牌");
+                if (ids[i] == ids[j]) return PlayResult.err(Lang.t("err.duplicate_card"));
             }
         }
 
@@ -1018,7 +1019,7 @@ public final class Engine {
         List<Card> cards = new ArrayList<>(ids.length);
         for (int id : ids) {
             Card c = findInHand(s, id);
-            if (c == null) return PlayResult.err("无效的手牌");
+            if (c == null) return PlayResult.err(Lang.t("err.bad_hand_cards"));
             cards.add(c);
         }
 
@@ -1034,7 +1035,7 @@ public final class Engine {
             // 紫色蜡封 → 塔罗牌（对齐 engine.js discard）
             if (c.isSeal(Data.Seal.PURPLE) && !c.debuff()) {
                 Data.Tarot t = s.stream("consumable").pick(Data.TAROTS);
-                if (s.addConsumableKey("tarot", t.key)) s.msg("紫色蜡封：获得 " + t.name);
+                if (s.addConsumableKey("tarot", t.key)) s.msg(Lang.t("msg.purple_seal", t.displayName()));
             }
             s.discardPile.add(c);
         }
@@ -1078,7 +1079,7 @@ public final class Engine {
         if (s.mods.rewardMult != 0) reward *= s.mods.rewardMult;
         if (s.mods.noBlindReward) reward = 0; // 煎蛋卷（真版）：所有盲注无奖励金（R102 对齐真版）
         gain += reward;
-        if (reward > 0) detail.add("盲注奖励 +$" + reward);
+        if (reward > 0) detail.add(Lang.t("pay.blind_reward", reward));
 
         // 剩余出牌
         long handPay = s.handsLeft;
@@ -1087,17 +1088,17 @@ public final class Engine {
         if ("green".equals(s.deckKey)) {
             long g = 2L * s.handsLeft + s.discardsLeft;
             gain += g;
-            if (g > 0) detail.add("绿色牌组 +$" + g);
+            if (g > 0) detail.add(Lang.t("pay.green_deck", g));
         } else if (handPay > 0) {
             gain += handPay;
-            detail.add("剩余出牌 +$" + handPay);
+            detail.add(Lang.t("pay.hands_left", handPay));
         }
 
         // 利息
         if (!s.mods.noInterest && s.money > 0) {
             int rate = s.mods.doubleInterest ? 2 : 1;
             long interest = Math.min(s.interestCap, (s.money / 5) * rate);
-            if (interest > 0) { gain += interest; detail.add("利息 +$" + interest); }
+            if (interest > 0) { gain += interest; detail.add(Lang.t("pay.interest", interest)); }
         }
 
         // 黄金牌（手中）
@@ -1112,7 +1113,7 @@ public final class Engine {
                 Data.HandType lastType = s.playedTypesThisRound.isEmpty()
                         ? Data.HandType.HIGH : s.playedTypesThisRound.get(s.playedTypesThisRound.size() - 1);
                 Data.Planet p = Data.Planet.byHand(lastType);
-                if (p != null && s.addConsumableKey("planet", p.key)) detail.add("蓝色蜡封：获得 " + p.name);
+                if (p != null && s.addConsumableKey("planet", p.key)) detail.add(Lang.t("pay.blue_seal", p.displayName()));
             }
         }
 
@@ -1132,7 +1133,7 @@ public final class Engine {
         // 租赁小丑：每回合 -$3（在 money += gain 之前扣）
         for (int i = 0; i < s.jokers.size(); i++) {
             JokerInstance j = s.jokers.get(i);
-            if (j.rental) { s.money -= 3; detail.add("租赁 " + j.def.displayName() + " -$3"); }
+            if (j.rental) { s.money -= 3; detail.add(Lang.t("pay.rental", j.def.displayName())); }
         }
         // 易腐小丑：倒计时，归零后失效
         for (int ji = s.jokers.size() - 1; ji >= 0; ji--) {
@@ -1149,7 +1150,7 @@ public final class Engine {
         // 投资标签：击败 Boss 后 +$25
         if (s.blindType == Data.BlindType.BOSS && s.nextShop.get("invest") != null) {
             s.gainMoney(25);
-            detail.add("投资标签 +$25");
+            detail.add(Lang.t("pay.investment_tag"));
             s.nextShop.remove("invest");
         }
 
@@ -1170,19 +1171,19 @@ public final class Engine {
             if (s.mods.typecastTrigger && s.ante == 4) {
                 for (int i = 0; i < s.jokers.size(); i++) s.jokers.get(i).eternal = true;
                 s.jokerSlots = 0;
-                s.msg("刻板印象：全体小丑永恒，小丑槽归零");
+                s.msg(Lang.t("msg.stereotype"));
             }
             s.bossQueue.remove(0);
             if (!s.bossQueue.isEmpty()) {
                 // 双 Boss 挑战（对齐 engine.js）：无商店间隔，立即接第二个 Boss
                 s.phase = Phase.BLIND_SELECT;
                 s.nextBlind = "boss";
-                s.msg("第二个 Boss 出现：" + bossDef(s).name);
+                s.msg(Lang.t("msg.second_boss_plain", bossDef(s).displayName()));
                 return;
             }
         }
 
-        s.msg("回合结束：" + String.join("；", detail));
+        s.msg(Lang.t("msg.round_end", String.join(Lang.t("msg.round_end_sep"), detail)));
         // 胜出盲注后进入商店（0.2.0）
         cn.quotidietium.balatro.engine.shop.Shop.openShop(s);
     }
@@ -1237,7 +1238,7 @@ public final class Engine {
     private static void loseRun(RunState s) {
         s.phase = Phase.END;
         s.lost = true;
-        s.msg("本局结束：未能达到目标分数");
+        s.msg(Lang.t("msg.run_lost"));
     }
 
     // ================= 辅助 =================

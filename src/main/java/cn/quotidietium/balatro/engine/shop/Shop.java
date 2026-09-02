@@ -7,6 +7,7 @@ import cn.quotidietium.balatro.engine.JokerInstance;
 import cn.quotidietium.balatro.engine.Rng;
 import cn.quotidietium.balatro.engine.RunState;
 import cn.quotidietium.balatro.engine.joker.JokerRegistry;
+import cn.quotidietium.balatro.i18n.Lang;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -176,7 +177,7 @@ public final class Shop {
                     || (p.type == Data.PackType.CELESTIAL && s.flags != null
                             && Boolean.TRUE.equals(s.flags.get("freePlanets")));
             PackItem pi = new PackItem();
-            pi.pack = p; pi.name = p.name; pi.desc = p.size + " 张选 " + p.choose + " 张";
+            pi.pack = p; pi.name = p.displayName(); pi.desc = Lang.t("shop.pack_size", p.size, p.choose);
             pi.price = free ? 0 : shopPrice(s, p.cost);
             packs.add(pi);
         }
@@ -204,7 +205,7 @@ public final class Shop {
             Data.Voucher v = st.pick(avail);
             avail.remove(v); // 同一商店内券不重复
             VoucherItem item = new VoucherItem();
-            item.voucher = v; item.name = v.name; item.desc = v.desc;
+            item.voucher = v; item.name = v.displayName(); item.desc = v.desc();
             item.price = shopPrice(s, 10);
             vouchers.add(item);
         }
@@ -317,16 +318,16 @@ public final class Shop {
                 }
                 Data.Tarot t = tarotPool.isEmpty() ? null : st.pick(tarotPool);
                 if (t == null) return item("tarot", "fool",
-                        Data.Tarot.byKey("fool").name, Data.Tarot.byKey("fool").desc, shopPrice(s, 3));
+                        Data.Tarot.byKey("fool").displayName(), Data.Tarot.byKey("fool").desc(), shopPrice(s, 3));
                 boolean free = s.nextShop.get("freeTarot") != null;
-                return item("tarot", t.key, t.name, t.desc, free ? 0 : shopPrice(s, 3));
+                return item("tarot", t.key, t.displayName(), t.desc(), free ? 0 : shopPrice(s, 3));
             }
             case 2: {
                 Data.Planet p = st.pick(Data.PLANETS);
                 boolean free = s.nextShop.get("freePlanet") != null
                         || (s.flags != null && Boolean.TRUE.equals(s.flags.get("freePlanets")))
                         || s.vouchers.contains("astronomer"); // 保留兼容：早期版本若经券注入同名 key（当前无来源，见 R142）
-                return item("planet", p.key, p.name, p.desc, free ? 0 : shopPrice(s, 3));
+                return item("planet", p.key, p.displayName(), p.desc(), free ? 0 : shopPrice(s, 3));
             }
             case 4: {
                 // P9 性能：无禁入时用静态幻灵商店池（去 SPECIAL 的 SPECTRALS，同序）；
@@ -344,7 +345,7 @@ public final class Shop {
                 }
                 Data.Spectral sp = spPool.isEmpty() ? null : st.pick(spPool);
                 if (sp == null) return makeJokerItem(s, null, null);
-                return item("spectral", sp.key, sp.name, sp.desc, shopPrice(s, 4));
+                return item("spectral", sp.key, sp.displayName(), sp.desc(), shopPrice(s, 4));
             }
             case 3: {
                 Card c = s.randomPlayingCard();
@@ -359,7 +360,7 @@ public final class Shop {
                     }
                 }
                 CardItem it = new CardItem();
-                it.kind = "playing"; it.card = c; it.name = s.cardName(c); it.desc = "游戏牌";
+                it.kind = "playing"; it.card = c; it.name = s.cardName(c); it.desc = Lang.t("item.playing_card");
                 it.price = shopPrice(s, 1);
                 return it;
             }
@@ -402,7 +403,7 @@ public final class Shop {
         }
         if (pool.isEmpty()) {
             Data.Tarot t = st.pick(Data.TAROTS); // P9：共享 Data.TAROTS（原 List.of(values()) 每次新建）
-            return item("tarot", t.key, t.name, t.desc, shopPrice(s, 3));
+            return item("tarot", t.key, t.displayName(), t.desc(), shopPrice(s, 3));
         }
         Joker def = st.pick(pool);
         Data.Edition edition = forceEdition != null ? parseEdition(forceEdition) : null;
@@ -458,18 +459,18 @@ public final class Shop {
             if (neg ? s.jokerSpace() < 0 : s.jokerSpace() <= 0) return false;
             s.money -= it.price;
             s.jokers.add(it.joker);
-            s.msg("获得小丑：" + it.name);
+            s.msg(Lang.t("msg.joker_gained", it.name));
         } else if (it.kind.equals("playing")) {
             s.money -= it.price;
             s.addCardToDeck(it.card);
-            s.msg("牌组加入：" + it.name);
+            s.msg(Lang.t("msg.deck_added", it.name));
         } else {
             s.money -= it.price;
             if (!s.addConsumableKey(it.kind, it.key)) {
                 s.money += it.price;
                 return false; // 消耗品槽已满
             }
-            s.msg("获得：" + it.name);
+            s.msg(Lang.t("msg.gained", it.name));
         }
         it.sold = true;
         if (s.mods.inflationPerBuy) s.inflation++; // 真版通胀：每次购买 +$1（R123）
@@ -500,7 +501,7 @@ public final class Shop {
         if (s.mods.inflationPerBuy) s.inflation++; // 真版通胀：每次购买 +$1（R123）
         Data.Voucher v = it.voucher;
         s.vouchers.add(v.key);
-        s.msg("获得优惠券：" + v.name);
+        s.msg(Lang.t("msg.voucher_gained", v.displayName()));
         if (v.key.equals("hieroglyph") || v.key.equals("petroglyph")) {
             s.ante = Math.max(1, s.ante - 1);
         }

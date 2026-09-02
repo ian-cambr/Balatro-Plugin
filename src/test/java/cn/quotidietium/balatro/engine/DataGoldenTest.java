@@ -1,5 +1,8 @@
 package cn.quotidietium.balatro.engine;
 
+import cn.quotidietium.balatro.i18n.Lang;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -17,6 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * 断言花色/点数/牌型/盲注目标分等静态数据与原版逐项一致。
  */
 class DataGoldenTest {
+
+
+    /** 黄金数据来自原版中文 data.js，故这些断言固定跑在 zh_CN 下。 */
+    @BeforeAll
+    static void useChinese() {
+        Lang.load("zh_CN", null);
+    }
+
+    @AfterAll
+    static void restoreDefaultLocale() {
+        Lang.reset();
+    }
 
     @Test
     void rankNameMatches() throws IOException {
@@ -47,7 +62,7 @@ class DataGoldenTest {
         for (String[] p : lines("HAND")) {
             // HAND <key> <name> <chips> <mult> <lchips> <lmult> <order>
             Data.HandType h = Data.HandType.byKey(p[1]);
-            assertEquals(p[2], h.name, "name " + p[1]);
+            assertEquals(p[2], h.displayName(), "name " + p[1]);
             assertEquals(Integer.parseInt(p[3]), h.chips, "chips " + p[1]);
             assertEquals(Integer.parseInt(p[4]), h.mult, "mult " + p[1]);
             assertEquals(Integer.parseInt(p[5]), h.lchips, "lchips " + p[1]);
@@ -69,7 +84,7 @@ class DataGoldenTest {
     void suitsMatch() throws IOException {
         for (String[] p : lines("SUIT")) {
             Data.Suit s = Data.Suit.byKey(p[1]);
-            assertEquals(p[2], s.name, "name " + p[1]);
+            assertEquals(p[2], s.displayName(), "name " + p[1]);
             assertEquals(p[3], s.symbol, "symbol " + p[1]);
             assertEquals(p[4], s.color, "color " + p[1]);
         }
@@ -79,8 +94,8 @@ class DataGoldenTest {
     void enhancementsMatch() throws IOException {
         for (String[] p : pipeLines("ENH")) {
             Data.Enhancement e = Data.Enhancement.byKey(p[1]);
-            assertEquals(p[2], e.name, "name " + p[1]);
-            assertEquals(p[3], e.desc, "desc " + p[1]);
+            assertEquals(p[2], e.displayName(), "name " + p[1]);
+            assertEquals(p[3], e.desc(), "desc " + p[1]);
         }
     }
 
@@ -88,8 +103,8 @@ class DataGoldenTest {
     void editionsMatch() throws IOException {
         for (String[] p : pipeLines("EDITION")) {
             Data.Edition e = Data.Edition.byKey(p[1]);
-            assertEquals(p[2], e.name, "name " + p[1]);
-            assertEquals(p[3], e.desc, "desc " + p[1]);
+            assertEquals(p[2], e.displayName(), "name " + p[1]);
+            assertEquals(p[3], e.desc(), "desc " + p[1]);
             assertEquals(Double.parseDouble(p[4]), e.chance, 0.0, "chance " + p[1]);
         }
     }
@@ -98,8 +113,8 @@ class DataGoldenTest {
     void sealsMatch() throws IOException {
         for (String[] p : pipeLines("SEAL")) {
             Data.Seal s = Data.Seal.byKey(p[1]);
-            assertEquals(p[2], s.name, "name " + p[1]);
-            assertEquals(p[3], s.desc, "desc " + p[1]);
+            assertEquals(p[2], s.displayName(), "name " + p[1]);
+            assertEquals(p[3], s.desc(), "desc " + p[1]);
         }
     }
 
@@ -107,8 +122,8 @@ class DataGoldenTest {
     void tarotMatch() throws IOException {
         for (String[] p : pipeLines("TAROT")) {
             Data.Tarot t = Data.Tarot.byKey(p[1]);
-            assertEquals(p[2], t.name, "name " + p[1]);
-            assertEquals(p[3], t.desc, "desc " + p[1]);
+            assertEquals(p[2], t.displayName(), "name " + p[1]);
+            assertEquals(p[3], t.desc(), "desc " + p[1]);
         }
     }
 
@@ -116,9 +131,9 @@ class DataGoldenTest {
     void planetsMatch() throws IOException {
         for (String[] p : pipeLines("PLANET")) {
             Data.Planet pl = Data.Planet.byKey(p[1]);
-            assertEquals(p[2], pl.name, "name " + p[1]);
+            assertEquals(p[2], pl.displayName(), "name " + p[1]);
             assertEquals(p[3], pl.hand.key, "hand " + p[1]);
-            assertEquals(p[4], pl.desc, "desc " + p[1]);
+            assertEquals(p[4], pl.desc(), "desc " + p[1]);
         }
     }
 
@@ -126,8 +141,8 @@ class DataGoldenTest {
     void spectralMatch() throws IOException {
         for (String[] p : pipeLines("SPECTRAL")) {
             Data.Spectral sp = Data.Spectral.byKey(p[1]);
-            assertEquals(p[2], sp.name, "name " + p[1]);
-            assertEquals(p[3], sp.desc, "desc " + p[1]);
+            assertEquals(p[2], sp.displayName(), "name " + p[1]);
+            assertEquals(p[3], sp.desc(), "desc " + p[1]);
         }
     }
 
@@ -136,7 +151,7 @@ class DataGoldenTest {
         for (String[] p : pipeLines("PACK")) {
             Data.Pack pk = Data.packByKey(p[1]);
             assertEquals(p[2], pk.type.key, "type " + p[1]);
-            assertEquals(p[3], pk.name, "name " + p[1]);
+            assertEquals(p[3], pk.displayName(), "name " + p[1]);
             assertEquals(Integer.parseInt(p[4]), pk.size, "size " + p[1]);
             assertEquals(Integer.parseInt(p[5]), pk.choose, "choose " + p[1]);
             assertEquals(Integer.parseInt(p[6]), pk.cost, "cost " + p[1]);
@@ -147,8 +162,8 @@ class DataGoldenTest {
     void vouchersMatch() throws IOException {
         for (String[] p : pipeLines("VOUCHER")) {
             Data.Voucher v = Data.voucherByKey(p[1]);
-            assertEquals(p[2], v.name, "name " + p[1]);
-            assertEquals(p[3], v.desc, "desc " + p[1]);
+            assertEquals(p[2], v.displayName(), "name " + p[1]);
+            assertEquals(p[3], v.desc(), "desc " + p[1]);
             assertEquals(Integer.parseInt(p[4]), v.base, "base " + p[1]);
             String dep = v.pair != null ? v.pair : (v.requires != null ? v.requires : "-");
             assertEquals(p[5], dep, "pair/requires " + p[1]);
@@ -159,7 +174,7 @@ class DataGoldenTest {
     void rarityMatch() throws IOException {
         for (String[] p : pipeLines("RARITY")) {
             Data.Rarity r = Data.Rarity.byKey(p[1]);
-            assertEquals(p[2], r.name, "name " + p[1]);
+            assertEquals(p[2], r.displayName(), "name " + p[1]);
             assertEquals(Integer.parseInt(p[3]), r.weight, "weight " + p[1]);
         }
     }

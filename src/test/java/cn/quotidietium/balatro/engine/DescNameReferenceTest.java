@@ -7,6 +7,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import cn.quotidietium.balatro.i18n.Lang;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -21,6 +24,18 @@ import org.junit.jupiter.api.Test;
  */
 class DescNameReferenceTest {
 
+
+    /** 黄金数据来自原版中文 data.js，故这些断言固定跑在 zh_CN 下。 */
+    @BeforeAll
+    static void useChinese() {
+        Lang.load("zh_CN", null);
+    }
+
+    @AfterAll
+    static void restoreDefaultLocale() {
+        Lang.reset();
+    }
+
     private static final Pattern QUOTED = Pattern.compile("「([^」]+)」");
 
     /** 全部合法显示名（标签/挑战 desc 可能引用的一切实体命名）。 */
@@ -29,12 +44,12 @@ class DescNameReferenceTest {
         for (var j : JokerRegistry.allJokersOrdered()) {
             names.add(JokerRegistry.nameOf(j.key()));
         }
-        for (Data.Voucher v : Data.VOUCHERS) names.add(v.name);
-        for (Data.Pack p : Data.PACKS) names.add(p.name);
-        for (Data.Tarot t : Data.TAROTS) names.add(t.name);
-        for (Data.Planet p : Data.PLANETS) names.add(p.name);
-        for (Data.Spectral sp : Data.SPECTRALS) names.add(sp.name);
-        for (Data.Boss b : Data.Boss.values()) names.add(b.name);
+        for (Data.Voucher v : Data.VOUCHERS) names.add(v.displayName());
+        for (Data.Pack p : Data.PACKS) names.add(p.displayName());
+        for (Data.Tarot t : Data.TAROTS) names.add(t.displayName());
+        for (Data.Planet p : Data.PLANETS) names.add(p.displayName());
+        for (Data.Spectral sp : Data.SPECTRALS) names.add(sp.displayName());
+        for (Data.Boss b : Data.Boss.values()) names.add(b.displayName());
         for (var d : Data.DECKS) names.add(d.name());
         return names;
     }

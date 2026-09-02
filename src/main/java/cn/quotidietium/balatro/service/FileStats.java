@@ -2,6 +2,7 @@ package cn.quotidietium.balatro.service;
 
 import cn.quotidietium.balatro.api.RunSummary;
 import cn.quotidietium.balatro.api.service.StatsService;
+import cn.quotidietium.balatro.i18n.Lang;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -75,7 +76,7 @@ public final class FileStats implements StatsService {
             }
         } catch (IOException e) {
             // 持久化失败不影响局内，但记日志便于排查磁盘/权限问题
-            if (logger != null) logger.log(Level.WARNING, "统计写入失败：" + file, e);
+            if (logger != null) logger.log(Level.WARNING, Lang.t("log.stats_write_failed", file), e);
         }
     }
 
@@ -103,7 +104,7 @@ public final class FileStats implements StatsService {
             }
             records.addAll(tail);
         } catch (IOException e) {
-            if (logger != null) logger.log(Level.WARNING, "统计读取失败（从空记录开始）：" + file, e);
+            if (logger != null) logger.log(Level.WARNING, Lang.t("log.stats_read_failed", file), e);
             return;
         }
         // 超限则压缩重写，避免文件与下次启动耗时无限增长
@@ -140,9 +141,9 @@ public final class FileStats implements StatsService {
                 }
             }
             FileWinCounter.moveAtomic(tmp, file);
-            if (logger != null) logger.info("统计文件已压缩至最近 " + records.size() + " 条：" + file);
+            if (logger != null) logger.info(Lang.t("log.stats_compacted", records.size(), file));
         } catch (IOException e) {
-            if (logger != null) logger.log(Level.WARNING, "统计文件压缩失败（不影响运行）：" + file, e);
+            if (logger != null) logger.log(Level.WARNING, Lang.t("log.stats_compact_failed", file), e);
         }
     }
 

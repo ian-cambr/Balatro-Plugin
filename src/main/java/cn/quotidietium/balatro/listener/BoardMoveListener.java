@@ -1,6 +1,7 @@
 package cn.quotidietium.balatro.listener;
 
 import cn.quotidietium.balatro.BalatroPlugin;
+import cn.quotidietium.balatro.i18n.Lang;
 import cn.quotidietium.balatro.session.GameSession;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -60,7 +61,7 @@ public final class BoardMoveListener implements Listener {
             try {
                 s.board().relocate(player.getEyeLocation());
             } catch (RuntimeException ex) {
-                plugin.getLogger().warning("牌桌迁移失败（玩家 " + player.getName() + "）：" + ex);
+                plugin.getLogger().warning(Lang.t("log.board_move_failed", player.getName(), ex));
             }
         });
     }

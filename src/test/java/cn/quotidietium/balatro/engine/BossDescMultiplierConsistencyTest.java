@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import cn.quotidietium.balatro.i18n.Lang;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -20,6 +23,18 @@ import org.junit.jupiter.api.Test;
  * 或代码改了 desc 漏改，两侧任一漂移都会失败。
  */
 class BossDescMultiplierConsistencyTest {
+
+
+    /** 黄金数据来自原版中文 data.js，故这些断言固定跑在 zh_CN 下。 */
+    @BeforeAll
+    static void useChinese() {
+        Lang.load("zh_CN", null);
+    }
+
+    @AfterAll
+    static void restoreDefaultLocale() {
+        Lang.reset();
+    }
 
     private static final Pattern X_N = Pattern.compile("×(\\d+)");
 
@@ -43,8 +58,8 @@ class BossDescMultiplierConsistencyTest {
         long base = plainTarget / 2; // BOSS 默认 mult=2
 
         Data.Boss boss = Data.Boss.byKey(bossKey);
-        Matcher m = X_N.matcher(boss.desc);
-        assertTrue(m.find(), bossKey + " 的 desc 应含「×N」倍率表述：" + boss.desc);
+        Matcher m = X_N.matcher(boss.desc());
+        assertTrue(m.find(), bossKey + " 的 desc 应含「×N」倍率表述：" + boss.desc());
         int claimed = Integer.parseInt(m.group(1));
         long actual = bossTarget / base;
         assertEquals(claimed, actual,

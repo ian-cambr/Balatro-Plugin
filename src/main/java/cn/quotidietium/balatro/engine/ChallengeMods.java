@@ -1,5 +1,6 @@
 package cn.quotidietium.balatro.engine;
 
+import cn.quotidietium.balatro.i18n.Lang;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,7 +79,7 @@ public final class ChallengeMods {
                                 ji.edition = cn.quotidietium.balatro.engine.Data.Edition.NEGATIVE;
                             }
                             s.jokers.add(ji);
-                            s.msg("获得永恒小丑：" + cn.quotidietium.balatro.engine.joker.JokerRegistry.nameOf(jk));
+                            s.msg(Lang.t("msg.eternal_joker", cn.quotidietium.balatro.engine.joker.JokerRegistry.nameOf(jk)));
                         }
                     }
                     Engine.recomputeFlags(s);

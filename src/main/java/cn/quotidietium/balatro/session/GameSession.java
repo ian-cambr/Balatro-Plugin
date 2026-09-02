@@ -11,6 +11,7 @@ import cn.quotidietium.balatro.engine.Data;
 import cn.quotidietium.balatro.engine.Engine;
 import cn.quotidietium.balatro.engine.Phase;
 import cn.quotidietium.balatro.engine.RunState;
+import cn.quotidietium.balatro.i18n.Lang;
 import cn.quotidietium.balatro.render.RoundBoard;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +86,7 @@ public final class GameSession {
     /** 出牌（cardIds 为手牌中的卡 id）。 */
     public Engine.PlayResult play(List<Integer> cardIds) {
         if (state.phase != Phase.ROUND) {
-            return Engine.PlayResult.err("当前不在回合中");
+            return Engine.PlayResult.err(Lang.t("err.not_in_round"));
         }
         Data.BlindType bt = state.blindType;
         int anteBefore = state.ante;
@@ -114,8 +115,7 @@ public final class GameSession {
             }
             if (bt == Data.BlindType.BOSS && state.phase == Phase.BLIND_SELECT) {
                 // 双 Boss 挑战转场提示（命令与全息出牌路径都会经过这里）
-                player.sendMessage("§e第二个 Boss 出现：§f" + Engine.bossDef(state).name
-                        + " §7— 用 /balatro go 或右键「▶ 开始盲注」继续");
+                player.sendMessage(Lang.t("msg.second_boss", Engine.bossDef(state).displayName()));
             }
             // 防御性守卫：playHand/endRound/openShop 路径不设 state.won（仅 Engine.nextRound 在
             // 击败 ante8 boss 后设 true），故此处当前不可达——真正触发通关 finishRun 的是
@@ -290,7 +290,7 @@ public final class GameSession {
                 try {
                     despawnBoard();
                 } catch (RuntimeException ex) {
-                    plugin.getLogger().warning("旧局牌桌回收失败（玩家 " + player.getName() + "）：" + ex);
+                    plugin.getLogger().warning(Lang.t("log.old_board_reclaim_failed", player.getName(), ex));
                 }
             }
         }
@@ -309,15 +309,15 @@ public final class GameSession {
         try {
             r.run();
         } catch (Exception ex) {
-            plugin.getLogger().warning(what + " 异常（玩家 " + player.getName() + "）：" + ex);
+            plugin.getLogger().warning(Lang.t("log.session_step_failed", what, player.getName(), ex));
         }
     }
 
     /** 向玩家发送本局统计（任何结束情况都发）。 */
     private void sendRunStats(boolean won, int anteReached) {
-        player.sendMessage("§6━━ 本局结束 ━━");
-        player.sendMessage((won ? "§a§l通关！" : "§c§l本局失败")
-                + "§r  §e到达底注 " + anteReached + " / 8");
+        player.sendMessage(Lang.t("summary.title"));
+        player.sendMessage(Lang.t(won ? "summary.won" : "summary.lost")
+                + Lang.t("summary.ante", anteReached));
         String deckName = state.deckKey;
         try {
             deckName = Data.deckByKey(state.deckKey).name();
@@ -325,24 +325,23 @@ public final class GameSession {
         }
         String stakeName = (state.stakeIdx >= 0 && state.stakeIdx < Data.STAKES.size())
                 ? Data.STAKES.get(state.stakeIdx).name() : String.valueOf(state.stakeIdx);
-        StringBuilder mode = new StringBuilder("§e种子 ").append(state.seed)
-                .append(" §7·§e 牌组 ").append(deckName)
-                .append(" §7·§e 赌注 ").append(stakeName);
+        StringBuilder mode = new StringBuilder(Lang.t("summary.seed", state.seed))
+                .append(Lang.t("summary.deck", deckName))
+                .append(Lang.t("summary.stake", stakeName));
         if (state.challenge != null) {
             for (Data.Challenge c : Data.CHALLENGES) {
                 if (c.key().equals(state.challenge)) {
-                    mode.append(" §7·§e 挑战 ").append(c.name());
+                    mode.append(Lang.t("summary.challenge", c.name()));
                     break;
                 }
             }
         }
         player.sendMessage(mode.toString());
-        player.sendMessage("§7打出 §f" + state.statsHandsPlayed + " §7手牌 · 持有 §f"
-                + state.jokers.size() + " §7张小丑 · 剩余 §f$" + state.money);
+        player.sendMessage(Lang.t("summary.stats", state.statsHandsPlayed, state.jokers.size(), state.money));
         if (won) {
-            player.sendMessage("§e/balatro endless §7继续无尽模式  §e/balatro quit §7结束本局");
+            player.sendMessage(Lang.t("summary.endless"));
         } else {
-            player.sendMessage("§e/balatro play §7再来一局");
+            player.sendMessage(Lang.t("summary.replay"));
         }
     }
 
@@ -354,7 +353,7 @@ public final class GameSession {
                 .append(" phase=").append(state.phase)
                 .append(" score=").append(state.roundScore).append("/").append(state.blindTarget)
                 .append(" hands=").append(state.handsLeft).append(" discards=").append(state.discardsLeft)
-                .append(" $").append(state.money).append("\n手牌: ");
+                .append(" $").append(state.money).append(Lang.t("status.hand"));
         List<String> cards = new ArrayList<>();
         for (int i = 0; i < state.hand.size(); i++) {
             Card c = state.hand.get(i);
@@ -365,8 +364,8 @@ public final class GameSession {
     }
 
     private static String cardLabel(Card c) {
-        if (c.facedown()) return "？"; // 身份保密（R238）：与板面「？」一致，防 status 通道泄露
-        if (c.isStone()) return "石头";
+        if (c.facedown()) return Lang.t("card.hidden"); // 身份保密（R238）：与板面「？」一致，防 status 通道泄露
+        if (c.isStone()) return Lang.t("card.stone");
         return Data.Suit.byIndex(c.suit()).symbol + Data.rankName(c.rank());
     }
 }

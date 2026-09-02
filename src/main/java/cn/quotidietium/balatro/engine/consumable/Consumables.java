@@ -8,6 +8,7 @@ import cn.quotidietium.balatro.engine.JokerInstance;
 import cn.quotidietium.balatro.engine.Phase;
 import cn.quotidietium.balatro.engine.Rng;
 import cn.quotidietium.balatro.engine.RunState;
+import cn.quotidietium.balatro.i18n.Lang;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,8 +31,8 @@ public final class Consumables {
 
     /** 使用消耗品 idx；targetIds 为手牌卡 id（可空）。 */
     public static Result use(RunState s, int idx, List<Integer> targetIds) {
-        if (s.phase != Phase.ROUND && s.phase != Phase.SHOP) return Result.err("当前无法使用");
-        if (idx < 0 || idx >= s.consumables.size()) return Result.err("无效消耗品");
+        if (s.phase != Phase.ROUND && s.phase != Phase.SHOP) return Result.err(Lang.t("err.cannot_use_now"));
+        if (idx < 0 || idx >= s.consumables.size()) return Result.err(Lang.t("err.bad_consumable"));
         Consumable c = s.consumables.get(idx);
         boolean inRound = s.phase == Phase.ROUND;
 
@@ -163,13 +164,13 @@ public final class Consumables {
 
         // 需指定手牌目标的消耗品只能在出牌回合使用（提前给出明确提示，避免误导性报错）
         if (!inRound && useInfo(c.key).needsTargets()) {
-            return Result.err("该消耗品需要指定手牌目标，请在出牌回合使用");
+            return Result.err(Lang.t("err.needs_hand_target"));
         }
 
         if (c.kind.equals("planet")) {
             Data.Planet p = Data.Planet.byKey(c.key);
             s.levelUpHand(p.hand, 1);
-            s.msg(p.name + "：「" + p.hand.name + "」升 1 级");
+            s.msg(Lang.t("msg.hand_level_up", p.displayName(), p.hand.displayName()));
             return Result.ok();
         }
 
@@ -178,12 +179,12 @@ public final class Consumables {
                 case "fool": {
                     RunState.TarotPlanet last = s.lastTarotPlanet;
                     if (last == null || (last.kind.equals("tarot") && last.key.equals("fool")))
-                        return Result.err("没有可复制的牌");
+                        return Result.err(Lang.t("err.nothing_to_copy"));
                     return apply(s, new Consumable(last.kind, last.key), targetIds, inRound);
                 }
                 case "magician", "empress", "hierophant": {
                     List<Card> t = targets(s, targetIds, inRound, 2, false);
-                    if (t == null || t.isEmpty()) return Result.err("请选择至多 2 张手牌");
+                    if (t == null || t.isEmpty()) return Result.err(Lang.t("err.select_up_to_2"));
                     Data.Enhancement enh = c.key.equals("magician") ? Data.Enhancement.LUCKY
                             : c.key.equals("empress") ? Data.Enhancement.MULT : Data.Enhancement.BONUS;
                     for (Card card : t) { applyEnhancement(card, enh); card.setFacedown(false); }
@@ -208,7 +209,7 @@ public final class Consumables {
                 }
                 case "lovers", "chariot", "justice", "devil", "tower": {
                     List<Card> t = targets(s, targetIds, inRound, 1, true);
-                    if (t == null) return Result.err("请选择 1 张手牌");
+                    if (t == null) return Result.err(Lang.t("err.select_1"));
                     Data.Enhancement enh = switch (c.key) {
                         case "lovers" -> Data.Enhancement.WILD;
                         case "chariot" -> Data.Enhancement.STEEL;
@@ -228,20 +229,20 @@ public final class Consumables {
                 case "wheel": {
                     List<JokerInstance> noEdition = new ArrayList<>();
                     for (JokerInstance j : s.jokers) if (j.edition == null) noEdition.add(j);
-                    if (noEdition.isEmpty()) return Result.err("没有可附加版本的小丑");
+                    if (noEdition.isEmpty()) return Result.err(Lang.t("err.no_edition_target"));
                     double pch = Boolean.TRUE.equals(s.flags.get("doubleProb")) ? 0.5 : 0.25;
                     if (st.chance(pch)) {
                         JokerInstance j = st.pick(noEdition);
                         // 对齐原版：版本为 1/3 均匀抽取（此前误用商店权重 50/35/15）
                         String e = st.pick(EDITION_POOL);
                         j.edition = parseEdition(e);
-                        s.msg("命运之轮：" + j.def.displayName() + " 获得 " + editionName(e));
-                    } else s.msg("命运之轮：什么都没发生");
+                        s.msg(Lang.t("msg.wheel_hit", j.def.displayName(), editionName(e)));
+                    } else s.msg(Lang.t("msg.wheel_miss"));
                     return Result.ok();
                 }
                 case "strength": {
                     List<Card> t = targets(s, targetIds, inRound, 2, false);
-                    if (t == null || t.isEmpty()) return Result.err("请选择至多 2 张手牌");
+                    if (t == null || t.isEmpty()) return Result.err(Lang.t("err.select_up_to_2"));
                     for (Card card : t) {
                         if (card.rank() >= 2 && card.rank() < 14) card.setRank(card.rank() + 1);
                         card.setFacedown(false);
@@ -250,14 +251,14 @@ public final class Consumables {
                 }
                 case "hanged": {
                     List<Card> t = targets(s, targetIds, inRound, 2, false);
-                    if (t == null || t.isEmpty()) return Result.err("请选择至多 2 张手牌");
+                    if (t == null || t.isEmpty()) return Result.err(Lang.t("err.select_up_to_2"));
                     for (Card card : t) { s.destroyCard(card); }
                     cn.quotidietium.balatro.engine.Engine.refillHand(s);
                     return Result.ok();
                 }
                 case "death": {
                     List<Card> t = targets(s, targetIds, inRound, 2, true);
-                    if (t == null) return Result.err("请选择恰好 2 张手牌");
+                    if (t == null) return Result.err(Lang.t("err.select_exactly_2"));
                     Card src = t.get(1), dst = t.get(0);
                     dst.setRank(src.rank()); dst.setSuit(src.suit()); dst.setEnh(src.enh());
                     dst.setEdition(src.edition()); dst.setSeal(src.seal()); dst.setFacedown(false);
@@ -271,22 +272,22 @@ public final class Consumables {
                 }
                 case "star", "moon", "sun", "world": {
                     List<Card> t = targets(s, targetIds, inRound, 3, false);
-                    if (t == null || t.isEmpty()) return Result.err("请选择至多 3 张手牌");
+                    if (t == null || t.isEmpty()) return Result.err(Lang.t("err.select_up_to_3"));
                     int suit = switch (c.key) { case "star" -> 3; case "moon" -> 2; case "sun" -> 1; default -> 0; };
                     for (Card card : t) { if (card.enh() != Data.Enhancement.STONE) card.setSuit(suit); card.setFacedown(false); }
                     return Result.ok();
                 }
                 case "judgement":
-                    return s.gainRandomJoker(null) ? Result.ok() : Result.err("小丑槽已满");
+                    return s.gainRandomJoker(null) ? Result.ok() : Result.err(Lang.t("err.joker_slots_full"));
                 default:
-                    return Result.err("未实现的塔罗牌");
+                    return Result.err(Lang.t("err.tarot_unimplemented"));
             }
         }
 
         if (c.kind.equals("spectral")) {
             switch (c.key) {
                 case "familiar", "grim", "incantation": {
-                    if (!inRoundHand(s)) return Result.err("需要在回合中使用");
+                    if (!inRoundHand(s)) return Result.err(Lang.t("err.needs_round"));
                     destroyRandomHandCards(s, st, 1);
                     int n; List<Integer> ranks;
                     if (c.key.equals("familiar")) { n = 3; ranks = List.of(11, 12, 13); }
@@ -304,7 +305,7 @@ public final class Consumables {
                 }
                 case "talisman", "dejavu", "trance", "medium": {
                     List<Card> t = targets(s, targetIds, inRound, 1, true);
-                    if (t == null) return Result.err("请选择 1 张手牌");
+                    if (t == null) return Result.err(Lang.t("err.select_1"));
                     Data.Seal seal = switch (c.key) {
                         case "talisman" -> Data.Seal.GOLD; case "dejavu" -> Data.Seal.RED;
                         case "trance" -> Data.Seal.BLUE; default -> Data.Seal.PURPLE;
@@ -314,7 +315,7 @@ public final class Consumables {
                 }
                 case "aura": {
                     List<Card> t = targets(s, targetIds, inRound, 1, true);
-                    if (t == null) return Result.err("请选择 1 张手牌");
+                    if (t == null) return Result.err(Lang.t("err.select_1"));
                     // 对齐原版：版本为 1/3 均匀抽取（此前误用商店权重 50/35/15）
                     t.get(0).setEdition(parseEdition(st.pick(EDITION_POOL))); t.get(0).setFacedown(false);
                     return Result.ok();
@@ -322,13 +323,13 @@ public final class Consumables {
                 case "wraith":
                     s.money = 0; s.gainRandomJoker(2); return Result.ok();
                 case "sigil": {
-                    if (!inRoundHand(s)) return Result.err("需要在回合中使用");
+                    if (!inRoundHand(s)) return Result.err(Lang.t("err.needs_round"));
                     int suit = st.range(0, 3);
                     for (Card card : s.hand) if (card.enh() != Data.Enhancement.STONE) card.setSuit(suit);
                     return Result.ok();
                 }
                 case "ouija": {
-                    if (!inRoundHand(s)) return Result.err("需要在回合中使用");
+                    if (!inRoundHand(s)) return Result.err(Lang.t("err.needs_round"));
                     int rank = st.range(2, 14);
                     for (Card card : s.hand) if (card.enh() != Data.Enhancement.STONE) card.setRank(rank);
                     // R137 真版：手牌上限 -1 为整局永久（写入 handSizePerm；真版即时生效，
@@ -340,7 +341,7 @@ public final class Consumables {
                 case "hex": {
                     List<JokerInstance> editable = new ArrayList<>();
                     for (JokerInstance j : s.jokers) if (!j.eternal) editable.add(j);
-                    if (editable.isEmpty()) return Result.err("没有可用的小丑");
+                    if (editable.isEmpty()) return Result.err(Lang.t("err.no_joker"));
                     JokerInstance keep = st.pick(editable);
                     // R137 真版：任意途径销毁格罗米歇尔都解锁卡文迪什（本处 removeIf 直删
                     // 绕过 destroyJoker，REF 同 bug 不置 grosDead——被销毁者含之则补置）
@@ -358,7 +359,7 @@ public final class Consumables {
                 case "ankh": {
                     List<JokerInstance> copyable = new ArrayList<>();
                     for (JokerInstance j : s.jokers) if (!j.eternal) copyable.add(j);
-                    if (copyable.isEmpty()) return Result.err("没有可用的小丑");
+                    if (copyable.isEmpty()) return Result.err(Lang.t("err.no_joker"));
                     JokerInstance src = st.pick(copyable);
                     // R137 真版：同 hex——removeIf 直删须补置 grosDead（详见 hex 注释）
                     boolean grosHit = false;
@@ -375,7 +376,7 @@ public final class Consumables {
                 }
                 case "cryptid": {
                     List<Card> t = targets(s, targetIds, inRound, 1, true);
-                    if (t == null) return Result.err("请选择 1 张手牌");
+                    if (t == null) return Result.err(Lang.t("err.select_1"));
                     for (int i = 0; i < 2; i++) {
                         Card copy = s.cloneCard(t.get(0));
                         // R130：统一入口（触发 onCardAdded，如全息海报）
@@ -385,21 +386,21 @@ public final class Consumables {
                     return Result.ok();
                 }
                 case "immolate": {
-                    if (!inRoundHand(s)) return Result.err("需要在回合中使用");
+                    if (!inRoundHand(s)) return Result.err(Lang.t("err.needs_round"));
                     destroyRandomHandCards(s, st, 5);
                     s.gainMoney(20);
                     return Result.ok();
                 }
                 case "soul":
-                    return s.gainRandomJoker(3) ? Result.ok() : Result.err("小丑槽已满");
+                    return s.gainRandomJoker(3) ? Result.ok() : Result.err(Lang.t("err.joker_slots_full"));
                 case "blackhole":
                     for (Data.HandType h : Data.HandType.values()) s.levelUpHand(h, 1);
-                    s.msg("黑洞：所有牌型升 1 级");
+                    s.msg(Lang.t("msg.black_hole"));
                     return Result.ok();
                 case "ectoplasm": {
                     List<JokerInstance> editable = new ArrayList<>();
                     for (JokerInstance j : s.jokers) if (j.edition == null) editable.add(j);
-                    if (editable.isEmpty()) return Result.err("没有可用的小丑");
+                    if (editable.isEmpty()) return Result.err(Lang.t("err.no_joker"));
                     st.pick(editable).edition = Data.Edition.NEGATIVE;
                     // R137 真版：同 ouija——永久手牌上限 -1（跨回合存活 + 当前回合即时生效）
                     s.handSizePerm -= 1;
@@ -407,10 +408,10 @@ public final class Consumables {
                     return Result.ok();
                 }
                 default:
-                    return Result.err("未实现的幻灵牌");
+                    return Result.err(Lang.t("err.spectral_unimplemented"));
             }
         }
-        return Result.err("未知消耗品");
+        return Result.err(Lang.t("err.unknown_consumable"));
     }
 
     private static boolean inRoundHand(RunState s) {
@@ -449,7 +450,7 @@ public final class Consumables {
 
     private static String editionName(String e) {
         return switch (e) {
-            case "foil" -> "闪膜"; case "holo" -> "镭射"; case "poly" -> "多彩"; case "negative" -> "负片"; default -> e;
+            case "foil", "holo", "poly", "negative" -> Lang.t("edition." + e + ".name"); default -> e;
         };
     }
 }

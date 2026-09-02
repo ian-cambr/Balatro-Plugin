@@ -2,6 +2,7 @@ package cn.quotidietium.balatro.engine.joker;
 
 import cn.quotidietium.balatro.engine.Joker;
 import cn.quotidietium.balatro.engine.JokerInstance;
+import cn.quotidietium.balatro.i18n.Lang;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,7 +86,13 @@ public final class JokerRegistry {
         return COST.getOrDefault(key, 0);
     }
 
+    /**
+     * 显示名：优先取语言文件 {@code joker.<key>.name}；未翻译时退回元数据里的名字，
+     * 再退回 key（漏翻在游戏内直接可见）。
+     */
     public static String nameOf(String key) {
+        String tk = "joker." + key + ".name";
+        if (Lang.has(tk)) return Lang.t(tk);
         String n = NAME.get(key);
         return n != null ? n : key;
     }

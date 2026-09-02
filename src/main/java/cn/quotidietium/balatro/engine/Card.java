@@ -1,5 +1,7 @@
 package cn.quotidietium.balatro.engine;
 
+import cn.quotidietium.balatro.i18n.Lang;
+
 /**
  * 一张游戏牌，对应 balatro {@code Engine.makeCard} 产出的对象。
  *
@@ -209,7 +211,7 @@ public final class Card {
 
     @Override
     public String toString() {
-        if (isStone()) return "石头";
+        if (isStone()) return Lang.t("card.stone");
         return Data.Suit.byIndex(suit()).symbol + Data.rankName(rank());
     }
 }

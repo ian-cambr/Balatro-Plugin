@@ -1,6 +1,7 @@
 package cn.quotidietium.balatro.service;
 
 import cn.quotidietium.balatro.api.service.WinCounter;
+import cn.quotidietium.balatro.i18n.Lang;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -55,7 +56,7 @@ public final class FileWinCounter implements WinCounter {
             }
             moveAtomic(tmp, file);
         } catch (IOException e) {
-            if (logger != null) logger.log(Level.WARNING, "通关计数写入失败：" + file, e);
+            if (logger != null) logger.log(Level.WARNING, Lang.t("log.wins_write_failed", file), e);
         }
     }
 
@@ -95,7 +96,7 @@ public final class FileWinCounter implements WinCounter {
                 }
             }
         } catch (IOException | RuntimeException e) {
-            if (logger != null) logger.log(Level.WARNING, "通关计数读取失败（从空开始）：" + file, e);
+            if (logger != null) logger.log(Level.WARNING, Lang.t("log.wins_read_failed", file), e);
         }
     }
 }
