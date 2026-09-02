@@ -6,8 +6,8 @@ R220 审计轮（2026-08-17）首次建立，用于执行 `note/release/实机�
 
 ## 环境要求
 
-- 真实 Paper 1.21.11 服务器（本轮用 `F:\paper-test-1.21.11`，offline 模式）
-- Node.js + `npm install mineflayer`（协议 774 = 1.21.11）
+- 真实 Paper 26.2 服务器（本轮用 `F:\paper-test-26.2`，offline 模式）
+- Node.js + `npm install mineflayer`（1.21.11 时为协议 774；26.2 请按 mineflayer 支持的版本号调整）
 - 服务器插件目录放入 balatro jar
 
 ## 假人接入要点（踩坑记录）
@@ -23,14 +23,14 @@ R220 审计轮（2026-08-17）首次建立，用于执行 `note/release/实机�
    Shift+右键需手写包 `bot._client.write('use_entity', {target, mouse:0, sneaking:true, hand:0})`。
 5. **陈旧实体过滤**：牌桌 Interaction 池复用 + 相位切换后零尺寸残留（服务器侧已摘标签，
    无害），假人按 `metadata[8] > 0`（宽度）过滤活跃命中盒。
-6. **聊天按钮**：Paper 1.21.11 组件序列化为 NBT 风格 `click_event.command`
+6. **聊天按钮**：Paper 26.2 组件序列化为 NBT 风格 `click_event.command`
    （非老式 `clickEvent.value`）；从 `message.json` 提取后 `bot.chat(cmd)` 即等价点击。
 7. **布局分类（旋转无关）**：牌桌 `right = dir×up = (−fz, 0, fx)`；按钮/手牌按
    `dot(pos−center, right)` 投影排序——**主操作按钮（play/go/reroll）恒在投影最小侧**；
    mineflayer 每次 activateEntity 会 lookAt 漂移视向，绝对 x 排序会翻车。
 8. **协议层防线**：>256 字符命令被 Netty 解码拒绝（DecoderException 踢出）；
    `§`（U+00A7）触发 `illegal_characters` 踢出——都是**服务器自带防线**，预期行为。
-9. **RCON 环境陷阱（重大，R221 发现）**：**Paper 1.21.11 启用 RCON 后 use_entity
+9. **RCON 环境陷阱（重大，R221 发现）**：**Paper 26.2 启用 RCON 后 use_entity
    全灭**（A/B 四组对照：boot1/2/6 无 RCON 交互全部正常，boot3/4 有 RCON 时连
    原版右键上船都不行、服务器侧玩家坐标冻结的假象、mineflayer 确认包正常发出）。
    机理未定位（疑与该 Paper 构建的 RCON 实现有关）。**规约：假人验证一律在

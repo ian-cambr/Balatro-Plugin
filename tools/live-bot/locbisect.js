@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const log = (...a) => console.log(`[${new Date().toISOString().slice(11,19)}]`, ...a);
-const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'BalBot', version: '1.21.11', auth: 'offline' });
+const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'BalBot', version: '26.2', auth: 'offline' });
 let st = null;
 bot.on('message', (j) => { const s = j.toString(); const m = s.match(/hands=(\d+) discards=(\d+)/); if (m) st = { hands: +m[1], discards: +m[2] }; });
 const inters = () => { const o = []; for (const id in bot.entities) { const e = bot.entities[id]; if (e && e.name === 'interaction' && e.position && e.position.distanceTo(bot.entity.position) < 16) o.push(e); } return o; };

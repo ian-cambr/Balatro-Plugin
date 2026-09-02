@@ -6,7 +6,7 @@ const results = [];
 function step(n, ok, d) { results.push({ n, ok, d }); log(`STEP ${ok?'OK  ':'FAIL'} ${n} :: ${d}`); }
 function balCount(bot, r = 16) { let c=0; for (const id in bot.entities) { const e=bot.entities[id]; if (e && e.position && e!==bot.entity && e.position.distanceTo(bot.entity.position)<=r && (e.name==='interaction'||e.name==='text_display')) c++; } return c; }
 async function makeBot(u) {
-  const bot = mineflayer.createBot({ host:'127.0.0.1', port:25565, username:u, version:'1.21.11', auth:'offline' });
+  const bot = mineflayer.createBot({ host:'127.0.0.1', port:25565, username:u, version: '26.2', auth:'offline' });
   bot.on('kicked', r => log(u,'KICKED',JSON.stringify(r).slice(0,120)));
   bot.on('error', e => log(u,'ERR',e.message));
   bot.on('message', j => { const s=j.toString(); if (s) log(`CHAT<${u}> ${s.slice(0,150)}`); });

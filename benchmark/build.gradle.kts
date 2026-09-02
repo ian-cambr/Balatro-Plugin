@@ -16,16 +16,23 @@ dependencies {
     implementation(project(":"))
     // 主源集里 Bukkit 相关类的公开签名会引用 paper-api 类型；基准虽只用引擎纯逻辑，
     // 编译期仍需能解析这些签名（compileOnly，不进运行时）。
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:26.2.build.121-stable")
 }
 
 application {
     mainClass.set("cn.quotidietium.balatro.bench.Main")
 }
 
+// Paper 26.2 要求 Java 25：用 toolchain 固定编译 JDK（不再依赖机器 PATH / JAVA_HOME）。
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
+
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
-    options.release.set(21)
+    options.release.set(25)
 }
 
 // 运行方式：./gradlew :benchmark:run --args="--label <标签>"

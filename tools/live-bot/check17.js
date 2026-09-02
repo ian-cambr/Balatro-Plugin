@@ -3,7 +3,7 @@ const mineflayer = require('mineflayer');
 const fs = require('fs');
 const { execSync } = require('child_process');
 
-const HOST = '127.0.0.1', PORT = 25565, VER = '1.21.11';
+const HOST = '127.0.0.1', PORT = 25565, VER = '26.2';
 const NBOTS = 19; // + BalBot2 监控 = 20 满载
 const DURATION_MS = 240000;
 const log = (...a) => console.log(`[${new Date().toISOString().slice(11, 23)}]`, ...a);

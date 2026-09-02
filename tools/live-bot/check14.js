@@ -4,7 +4,7 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 const { rconCommand } = require('./rcon.js');
 
-const HOST = '127.0.0.1', PORT = 25565, VER = '1.21.11';
+const HOST = '127.0.0.1', PORT = 25565, VER = '26.2';
 const RCON = (cmd) => rconCommand('127.0.0.1', 25575, 'balatro220', cmd, 15000);
 const log = (...a) => console.log(`[${new Date().toISOString().slice(11, 23)}]`, ...a);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));

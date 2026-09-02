@@ -1,20 +1,20 @@
 name: Balatro
 version: '${version}'
 main: cn.quotidietium.balatro.BalatroPlugin
-api-version: '1.21.11'
+api-version: '26.2'
 author: ZTF3
 authors: [ZTF3, Dalict]
-description: 在 Minecraft 中实现 Steam 游戏《小丑牌》(Balatro) 的扑克构筑 Roguelike 玩法。
+description: Brings the poker deck-building roguelike of the Steam game Balatro into Minecraft.
 softdepend: [Vault]
 commands:
   balatro:
-    description: 小丑牌主命令
-    usage: /balatro help [页码] | gui | play [牌组] [赌注] [挑战] [种子] | playcard | disc | shop | buy | buybag | buyvoucher | reroll | next | go | skip | cons | use | packs | pick | skipack | sellj | sellc | status | endless | top | version | quit
+    description: Balatro main command
+    usage: /balatro help [page] | gui | play [deck] [stake] [challenge] [seed] | playcard | disc | shop | buy | buybag | buyvoucher | reroll | next | go | skip | cons | use | packs | pick | skipack | sellj | sellc | status | endless | top | version | quit
     aliases: [blt, joker]
 permissions:
   balatro.play:
-    description: 允许开始/退出一局小丑牌
+    description: Allows starting and quitting a Balatro run
     default: true
   balatro.admin:
-    description: 允许重载配置等管理操作
+    description: Allows administrative actions such as reloading the config
     default: op

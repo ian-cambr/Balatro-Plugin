@@ -4,8 +4,8 @@
 
 ## 环境要求
 
-- **Minecraft 1.21.11**（Paper 或 Papo 服务端）
-- **Java 21**
+- **Minecraft 26.2**（Paper 或 Papo 服务端）
+- **Java 25**
 
 ## 安装
 

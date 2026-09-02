@@ -76,7 +76,7 @@ class PluginYmlConsistencyTest {
 
         assertEquals("Balatro", extractValue(yml, "name"));
         assertEquals("cn.quotidietium.balatro.BalatroPlugin", extractValue(yml, "main"));
-        assertEquals("'1.21.11'", extractValue(yml, "api-version"), "api-version 须锁定 1.21.11");
+        assertEquals("'26.2'", extractValue(yml, "api-version"), "api-version 须锁定 26.2");
         assertEquals("'${version}'", extractValue(yml, "version"),
                 "version 须为构建期宏（processResources expand），防两处版本漂移");
         assertEquals("[blt, joker]", extractValue(yml, "aliases"), "别名集须与文档一致（README/BalatroCommand Javadoc）");

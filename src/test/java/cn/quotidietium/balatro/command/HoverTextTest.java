@@ -30,6 +30,17 @@ class HoverTextTest {
         return out;
     }
 
+    /**
+     * 取点击事件的文本载荷。
+     *
+     * <p>Adventure 5（Paper 26.2）起 {@code ClickEvent} 泛型化，{@code value()} 由
+     * 类型化的 {@code payload()} 取代；SUGGEST_COMMAND/RUN_COMMAND 的载荷为
+     * {@link ClickEvent.Payload.Text}。
+     */
+    private static String clickValue(ClickEvent<?> ev) {
+        return ((ClickEvent.Payload.Text) ev.payload()).value();
+    }
+
     /** 收集组件树中所有带点击事件的组件。 */
     private static List<Component> clickable(Component root) {
         List<Component> out = new ArrayList<>();
@@ -50,9 +61,9 @@ class HoverTextTest {
         assertTrue(hoverText.contains("例"), "悬浮应含使用举例");
         List<Component> clk = clickable(c);
         assertEquals(1, clk.size());
-        ClickEvent click = clk.get(0).clickEvent();
+        ClickEvent<?> click = clk.get(0).clickEvent();
         assertEquals(ClickEvent.Action.SUGGEST_COMMAND, click.action());
-        assertEquals("/balatro play", click.value(), "点击应回填命令主键");
+        assertEquals("/balatro play", clickValue(click), "点击应回填命令主键");
     }
 
     @Test
@@ -60,7 +71,7 @@ class HoverTextTest {
         Component c = HoverText.commandify("§e/balatro pc§f 出牌");
         List<Component> clk = clickable(c);
         assertEquals(1, clk.size(), "别名 pc 应解析到 playcard");
-        assertEquals("/balatro playcard", clk.get(0).clickEvent().value());
+        assertEquals("/balatro playcard", clickValue(clk.get(0).clickEvent()));
     }
 
     @Test
@@ -93,7 +104,7 @@ class HoverTextTest {
         assertNotNull(t.hoverEvent());
         assertNotNull(t.clickEvent());
         assertEquals("quit", PLAIN.serialize(t));
-        assertEquals("/balatro quit", t.clickEvent().value());
+        assertEquals("/balatro quit", clickValue(t.clickEvent()));
     }
 
     @Test
