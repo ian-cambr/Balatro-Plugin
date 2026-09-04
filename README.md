@@ -1,3 +1,4 @@
+# This is a port of the Chinese Balatro mod, adapted for English and Paper 26.2.
 # Balatro — Minecraft 小丑牌插件
 
 在 Minecraft 中游玩《小丑牌》(Balatro) 的扑克构筑 Roguelike：打牌计分、收集小丑与消耗品、挑战 Boss 盲注，通关 8 个底注。
